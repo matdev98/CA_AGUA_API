@@ -1,0 +1,22 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace caMUNICIPIOSAPI.Application.DTOs
+{
+    public class NotificacionDTO
+    {
+        public int IdContribuyente { get; set; }
+        public string CelularDestino { get; set; } = null!;
+        public string Canal { get; set; } = null!;
+        public DateTime FechaEmision { get; set; }
+        public string Mensaje { get; set; } = null!;
+        public bool Enviada { get; set; }
+        public DateTime FechaEnvio { get; set; }
+        public bool Leida { get; set; }
+    }
+
+
+}

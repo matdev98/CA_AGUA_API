@@ -1,0 +1,17 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using caMUNICIPIOSAPI.Domain.Entities;
+
+namespace caMUNICIPIOSAPI.Application.Interfaces.Repositories
+{
+    public interface IAuthRepository
+    {
+        Task<Usuarios> ObtenerPorNombreUsuarioAsync(string nombreUsuario);
+        Task<Usuarios> ObtenerPorEmailAsync(string email);
+        Task CrearUsuarioAsync(Usuarios usuario);
+    }
+
+}

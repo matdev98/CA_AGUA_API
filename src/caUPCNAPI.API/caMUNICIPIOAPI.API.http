@@ -1,0 +1,6 @@
+@caMUNICIPIOAPI.API_HostAddress = http://localhost:5051
+
+GET {{caMUNICIPIOAPI.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
