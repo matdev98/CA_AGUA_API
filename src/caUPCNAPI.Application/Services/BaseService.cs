@@ -4,6 +4,7 @@ using caMUNICIPIOSAPI.Domain.Entities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -23,6 +24,10 @@ namespace caMUNICIPIOSAPI.Application.Services
         public async Task<T?> GetByIdAsync(int id) => await _repository.GetByIdAsync(id);
 
         public async Task<T> AddAsync(T entity) => await _repository.AddAsync(entity);
+        public async Task<T?> FindAsync(Expression<Func<T, bool>> predicate)
+        {
+            return await _repository.FindAsync(predicate);
+        }
 
         public async Task<bool> UpdateAsync(int id, T entity) => await _repository.UpdateAsync(id, entity);
 

@@ -186,13 +186,25 @@ namespace caMUNICIPIOSAPI.API.Controllers
             }
             catch (Exception ex)
             {
+                var errores = new List<string> { ex.Message };
+
+                if (ex.InnerException != null)
+                {
+                    errores.Add(ex.InnerException.Message);
+                    if (ex.InnerException.InnerException != null)
+                    {
+                        errores.Add(ex.InnerException.InnerException.Message); // más profundo si hace falta
+                    }
+                }
+
                 var resultadoError = ResultadoDTO<string>.Fallido(
                     mensaje: "Error al generar tributos.",
-                    errores: new List<string> { ex.Message }
+                    errores: errores
                 );
 
                 return BadRequest(resultadoError);
             }
+
         }
 
 

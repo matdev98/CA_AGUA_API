@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -34,6 +35,14 @@ namespace caMUNICIPIOSAPI.Infraestructure.Persistence.Repositories
             await _context.SaveChangesAsync();
             return entity;
         }
+
+        public async Task<T?> FindAsync(Expression<Func<T, bool>> predicate)
+        {
+            return await _context.Set<T>().FirstOrDefaultAsync(predicate);
+        }
+
+
+
         public async Task<bool> UpdateAsync(int id, T entity)
         {
             var existing = await _entities

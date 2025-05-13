@@ -1,6 +1,7 @@
 ﻿using caMUNICIPIOSAPI.Application.DTOs;
 using caMUNICIPIOSAPI.Application.Interfaces.Repositories;
 using caMUNICIPIOSAPI.Domain.Entities;
+using caMUNICIPIOSAPI.Infraestructure.Enums;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -59,11 +60,11 @@ namespace caMUNICIPIOSAPI.Infraestructure.Persistence.Repositories
                         FechaEmision = hoy,
                         FechaVencimiento = fechaVencimiento,
                         IdEstado = 1,
-                        EstadoTributoDescripcion = "Pendiente" // Podés actualizar este campo con lógica de pagos si la tenés
+                        EstadoTributoDescripcion = "Pendiente"
                     });
                 }
 
-                // Agregar impuestos variables vigentes
+                // Agregar todos los impuestos variables vigentes
                 var impuestosVariables = await _context.ContribuyentesImpuestosVariables
                     .Where(iv => iv.IdContribuyente == contribuyenteId
                         && iv.IdInmueble == inmueble.Id
@@ -73,10 +74,17 @@ namespace caMUNICIPIOSAPI.Infraestructure.Persistence.Repositories
 
                 foreach (var variable in impuestosVariables)
                 {
-                    var tipoImpuesto = await _context.TiposImpuesto.FirstOrDefaultAsync(t => t.Id == variable.IdTipoImpuesto);
-                    var valorVariable = await _context.ValoresTipoImpuesto.FirstOrDefaultAsync(v => v.TipoImpuestoId == variable.IdTipoImpuesto);
+                    var tipoImpuesto = await _context.TiposImpuesto
+                        .FirstOrDefaultAsync(t => t.Id == variable.IdTipoImpuesto);
 
-                    if (tipoImpuesto == null || valorVariable == null)
+                    if (tipoImpuesto == null)
+                        continue;
+
+                    // Buscamos el valor correspondiente al tipo de impuesto
+                    var valorVariable = await _context.ValoresTipoImpuesto
+                        .FirstOrDefaultAsync(v => v.TipoImpuestoId == variable.IdTipoImpuesto);
+
+                    if (valorVariable == null)
                         continue;
 
                     decimal monto = valorVariable.Valor;
@@ -99,9 +107,10 @@ namespace caMUNICIPIOSAPI.Infraestructure.Persistence.Repositories
                         FechaEmision = hoy,
                         FechaVencimiento = fechaVencimiento,
                         IdEstado = 1,
-                        EstadoTributoDescripcion = "Pendiente" // Lógica de pagos también puede ir aquí
+                        EstadoTributoDescripcion = "Pendiente"
                     });
                 }
+
             }
 
             return tributos;
@@ -169,7 +178,6 @@ namespace caMUNICIPIOSAPI.Infraestructure.Persistence.Repositories
 
             var pagosSet = await _context.Pagos
                 .Where(p => p.Periodo == periodo && inmueblesIds.Contains(p.Idinmueble))
-                .Select(p => p.Idinmueble)
                 .ToListAsync();
 
             // Obtener descripciones desde la tabla EstadoTributo
@@ -183,12 +191,62 @@ namespace caMUNICIPIOSAPI.Infraestructure.Persistence.Repositories
                 {
                     var primerTributo = g.First();
                     var inmueble = inmuebles.GetValueOrDefault(g.Key);
-                    var estaPagado = pagosSet.Contains(g.Key);
+                    var totalTributoInmueble = g.Sum(t => t.Monto);
 
-                    var estadoId = estaPagado ? 1 : 6;
-                    var estadoDescripcion = estadosTributo.TryGetValue(estadoId, out var desc)
+                    var sumaPagosInmueble = pagosSet
+                        .Where(p => p.Idinmueble == g.Key)
+                        .Sum(p => p.MontoPagado);
+
+                    bool estaPagadoCompletamente = sumaPagosInmueble >= totalTributoInmueble;
+                    bool estaPagadoParcialmente = sumaPagosInmueble > 0 && !estaPagadoCompletamente;
+                    bool estaVencido = primerTributo.FechaVencimiento < DateTime.Now;
+
+                    int estadoId;
+                    string estadoBaseDescripcion;
+                    string estadoDescripcionFinal;
+
+                    if (estaPagadoCompletamente)
+                    {
+                        estadoId = (int)EstadoTributoEnum.Pagada;
+                    }
+                    else if (estaPagadoParcialmente && estaVencido)
+                    {
+                        estadoId = (int)EstadoTributoEnum.ParcialmentePagadoVencido;
+                    }
+                    else if (estaPagadoParcialmente)
+                    {
+                        estadoId = (int)EstadoTributoEnum.ParcialmentePagado;
+                    }
+                    else if (estaVencido)
+                    {
+                        estadoId = (int)EstadoTributoEnum.VencidoSinPago;
+                    }
+                    else
+                    {
+                        estadoId = (int)EstadoTributoEnum.Pendiente;
+                    }
+
+                    estadoBaseDescripcion = estadosTributo.TryGetValue(estadoId, out var desc)
                         ? desc
                         : "Desconocido";
+
+                    
+                    if (estaPagadoParcialmente && !estaVencido)
+                    {
+                        estadoDescripcionFinal = $"Pagada parcialmente";
+                    }
+                    else if (estaPagadoParcialmente && estaVencido)
+                    {
+                        estadoDescripcionFinal = $"Pagada parcialmente y vencida";
+                    }
+                    else if (!estaPagadoCompletamente && estaVencido && !estaPagadoParcialmente)
+                    {
+                        estadoDescripcionFinal = $"Vencida";
+                    }
+                    else
+                    {
+                        estadoDescripcionFinal = estadoBaseDescripcion;
+                    }
 
                     return new TributoAgrupadoDTO
                     {
@@ -200,9 +258,9 @@ namespace caMUNICIPIOSAPI.Infraestructure.Persistence.Repositories
                         Documento = contribuyente.NumeroDocumento,
                         IdInmueble = g.Key,
                         Periodo = periodo,
-                        Monto = g.Sum(t => t.Monto),
+                        Monto = totalTributoInmueble,
                         IdEstado = estadoId,
-                        EstadoTributoDescripcion = estadoDescripcion
+                        EstadoTributoDescripcion = estadoDescripcionFinal
                     };
                 }).ToList();
 
@@ -243,6 +301,22 @@ namespace caMUNICIPIOSAPI.Infraestructure.Persistence.Repositories
             return resultado;
         }
 
+        public async Task<List<TributoContribuyenteDTO>> ObtenerTodosLosTributosDelContribuyentePorPeriodo(int idContribuyente, string periodo)
+        {
+            var contribuyente = await GetByIdAsync(idContribuyente);
+            if (contribuyente == null) return new List<TributoContribuyenteDTO>();
+
+            var inmueblesAgrupados = await ObtenerTributosAgrupados(idContribuyente, periodo);
+            if (inmueblesAgrupados == null || !inmueblesAgrupados.Any()) return new List<TributoContribuyenteDTO>();
+
+            var todosLosTributos = new List<TributoContribuyenteDTO>();
+            foreach (var inmueble in inmueblesAgrupados)
+            {
+                var detalles = await ObtenerDetalleTributoPorInmuebleAsync(idContribuyente, inmueble.IdInmueble, periodo);
+                todosLosTributos.AddRange(detalles);
+            }
+            return todosLosTributos;
+        }
 
         public async Task GenerarTributosDelMesAsync(int IdMunicipio)
         {
@@ -251,104 +325,95 @@ namespace caMUNICIPIOSAPI.Infraestructure.Persistence.Repositories
             {
                 var periodoActual = DateTime.Now.ToString("yyyyMM");
 
-                // Traemos todos los contribuyentes
-                var contribuyentes = await _context.Contribuyentes.ToListAsync();
+                // Traemos todos los inmuebles que tengan contribuyente asignado
+                var inmuebles = await _context.Inmuebles
+                    .Where(i => i.IdContribuyente != null)
+                    .ToListAsync();
 
-                foreach (var contribuyente in contribuyentes)
+                foreach (var inmueble in inmuebles)
                 {
-                    var inmuebles = await _context.Inmuebles
-                        .Where(i => i.IdContribuyente == contribuyente.Id)
+                    int idContribuyente = inmueble.IdContribuyente;
+
+                    // ========================
+                    // Generar tributo fijo
+                    // ========================
+                    int tipoImpuestoFijoId = 1;
+
+                    var valorFijo = await _context.ValoresTipoImpuesto
+                        .Where(v => v.TipoImpuestoId == tipoImpuestoFijoId)
+                        .OrderByDescending(v => v.PeriodoDesde)
+                        .FirstOrDefaultAsync();
+
+                    var tipoImpuestoFijo = await _context.TiposImpuesto
+                        .FirstOrDefaultAsync(t => t.Id == tipoImpuestoFijoId);
+
+                    bool existeTributoFijo = await _context.Tributos.AnyAsync(t =>
+                        t.IdContribuyente == idContribuyente &&
+                        t.IdInmueble == inmueble.Id &&
+                        t.IdTipoImpuesto == tipoImpuestoFijoId &&
+                        t.Periodo == periodoActual);
+
+                    if (valorFijo != null && tipoImpuestoFijo != null && !existeTributoFijo)
+                    {
+                        var tributoFijo = new Tributo
+                        {
+                            IdMunicipio = IdMunicipio,
+                            IdContribuyente = idContribuyente,
+                            IdInmueble = inmueble.Id,
+                            IdTipoImpuesto = tipoImpuestoFijoId,
+                            Descripcion = tipoImpuestoFijo.Descripcion,
+                            Periodo = periodoActual,
+                            Monto = valorFijo.Valor * inmueble.AreaTotal,
+                            FechaEmision = DateTime.Now,
+                            FechaVencimiento = new DateTime(DateTime.Now.Year, DateTime.Now.Month + 1, 10),
+                            IdEstado = 1,
+                            IdEstadoTributo = 6
+                        };
+                        _context.Tributos.Add(tributoFijo);
+                    }
+
+                    // ========================
+                    // Generar tributos variables
+                    // ========================
+                    var impuestosVariables = await _context.ContribuyentesImpuestosVariables
+                        .Where(iv => iv.IdContribuyente == idContribuyente && iv.IdInmueble == inmueble.Id)
                         .ToListAsync();
 
-                    foreach (var inmueble in inmuebles)
+                    foreach (var impuestoVar in impuestosVariables)
                     {
-                        // Impuesto fijo
-                        var tipoImpuestoFijoId = 1; // ID de impuesto fijo (lo dejamos fijo)
-
-                        var valorFijo = await _context.ValoresTipoImpuesto
-                            .Where(v => v.TipoImpuestoId == tipoImpuestoFijoId)
-                            .OrderByDescending(v => v.PeriodoDesde)
-                            .FirstOrDefaultAsync();
-
-                        var tipoImpuestoFijo = await _context.TiposImpuesto
-                            .FirstOrDefaultAsync(t => t.Id == tipoImpuestoFijoId);
-
-                        if (valorFijo != null && tipoImpuestoFijo != null)
+                        if (impuestoVar.PeriodoDesde <= DateTime.Now && impuestoVar.PeriodoHasta >= DateTime.Now)
                         {
-                            // Validar que no exista ya este tributo
-                            bool existeTributoFijo = await _context.Tributos.AnyAsync(t =>
-                                t.IdContribuyente == contribuyente.Id &&
-                                t.IdInmueble == inmueble.Id &&
-                                t.IdTipoImpuesto == tipoImpuestoFijoId &&
-                                t.Periodo == periodoActual
-                            );
+                            var valorVariable = await _context.ValoresTipoImpuesto
+                                .Where(v => v.TipoImpuestoId == impuestoVar.IdTipoImpuesto)
+                                .OrderByDescending(v => v.PeriodoDesde)
+                                .FirstOrDefaultAsync();
 
-                            if (!existeTributoFijo)
+                            var tipoImpuestoVar = await _context.TiposImpuesto
+                                .FirstOrDefaultAsync(t => t.Id == impuestoVar.IdTipoImpuesto);
+
+                            bool existeTributoVar = await _context.Tributos.AnyAsync(t =>
+                                t.IdContribuyente == idContribuyente &&
+                                t.IdInmueble == inmueble.Id &&
+                                t.IdTipoImpuesto == impuestoVar.IdTipoImpuesto &&
+                                t.Periodo == periodoActual);
+
+                            if (valorVariable != null && tipoImpuestoVar != null && !existeTributoVar)
                             {
-                                var tributoFijo = new Tributo
+                                var tributoVar = new Tributo
                                 {
                                     IdMunicipio = IdMunicipio,
-                                    IdContribuyente = contribuyente.Id,
+                                    IdContribuyente = idContribuyente,
                                     IdInmueble = inmueble.Id,
-                                    IdTipoImpuesto = tipoImpuestoFijoId,
-                                    Descripcion = tipoImpuestoFijo.Descripcion,
+                                    IdTipoImpuesto = impuestoVar.IdTipoImpuesto,
+                                    Descripcion = tipoImpuestoVar.Descripcion,
                                     Periodo = periodoActual,
-                                    Monto = valorFijo.Valor * inmueble.AreaTotal,
+                                    Monto = valorVariable.Valor,
                                     FechaEmision = DateTime.Now,
                                     FechaVencimiento = new DateTime(DateTime.Now.Year, DateTime.Now.Month + 1, 10),
-                                    IdEstado = 1, // 1 = Pendiente
+                                    IdEstado = 1,
                                     IdEstadoTributo = 6
                                 };
-                                _context.Tributos.Add(tributoFijo);
-                            }
-                        }
-
-                        // Impuestos variables
-                        var impuestosVariables = await _context.ContribuyentesImpuestosVariables
-                            .Where(iv => iv.IdContribuyente == contribuyente.Id && iv.IdInmueble == inmueble.Id)
-                            .ToListAsync();
-
-                        foreach (var impuestoVar in impuestosVariables)
-                        {
-                            // Solo impuestos activos en fecha
-                            if (impuestoVar.PeriodoDesde <= DateTime.Now && impuestoVar.PeriodoHasta >= DateTime.Now)
-                            {
-                                var valorVariable = await _context.ValoresTipoImpuesto
-                                    .Where(v => v.TipoImpuestoId == impuestoVar.IdTipoImpuesto)
-                                    .OrderByDescending(v => v.PeriodoDesde)
-                                    .FirstOrDefaultAsync();
-
-                                var tipoImpuestoVar = await _context.TiposImpuesto
-                                    .FirstOrDefaultAsync(t => t.Id == impuestoVar.IdTipoImpuesto);
-
-                                if (valorVariable != null && tipoImpuestoVar != null)
-                                {
-                                    bool existeTributoVar = await _context.Tributos.AnyAsync(t =>
-                                        t.IdContribuyente == contribuyente.Id &&
-                                        t.IdInmueble == inmueble.Id &&
-                                        t.IdTipoImpuesto == impuestoVar.IdTipoImpuesto &&
-                                        t.Periodo == periodoActual
-                                    );
-
-                                    if (!existeTributoVar)
-                                    {
-                                        var tributoVar = new Tributo
-                                        {
-                                            IdMunicipio = IdMunicipio,
-                                            IdContribuyente = contribuyente.Id,
-                                            IdInmueble = inmueble.Id,
-                                            IdTipoImpuesto = impuestoVar.IdTipoImpuesto,
-                                            Descripcion = tipoImpuestoVar.Descripcion,
-                                            Periodo = periodoActual,
-                                            Monto = valorVariable.Valor,
-                                            FechaEmision = DateTime.Now,
-                                            FechaVencimiento = new DateTime(DateTime.Now.Year, DateTime.Now.Month + 1, 10),
-                                            IdEstado = 1,
-                                            IdEstadoTributo = 6
-                                        };
-                                        _context.Tributos.Add(tributoVar);
-                                    }
-                                }
+                                _context.Tributos.Add(tributoVar);
                             }
                         }
                     }
@@ -357,11 +422,12 @@ namespace caMUNICIPIOSAPI.Infraestructure.Persistence.Repositories
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
             }
-            catch
+            catch (Exception ex)
             {
                 await transaction.RollbackAsync();
-                throw;
+                throw new ApplicationException("Error al generar tributos", ex);
             }
         }
+
     }
 }

@@ -67,6 +67,8 @@ builder.Services.AddScoped<ITributoRepository, TributoRepository>();
 builder.Services.AddScoped<IPagoRepository, PagoRepository>();
 builder.Services.AddScoped<IInmuebleRepository, InmuebleRepository>();
 builder.Services.AddScoped<IDatosRepository, DatosRepository>();
+builder.Services.AddScoped<IContribuyenteRepository, ContribuyenteRepository>();
+builder.Services.AddScoped<IFacturaRepository, FacturaRepository>();
 
 //builder.Services.AddScoped(typeof(IBaseRepository<>), typeof(BaseRepository<>));
 
@@ -79,7 +81,7 @@ builder.Services.AddScoped<ITributoService, TributoService>();
 builder.Services.AddScoped<IPagoService, PagoService>();
 builder.Services.AddScoped<IInmuebleService, InmuebleService>();
 builder.Services.AddScoped<IDatosService, DatosService>();
-//builder.Services.AddScoped<IBaseService<MobileUser>, BaseRepoService<MobileUser>>();
+builder.Services.AddScoped<IFacturaService, FacturaService>();
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
 // AutoMapper

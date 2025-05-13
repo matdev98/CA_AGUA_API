@@ -40,7 +40,92 @@ namespace caMUNICIPIOSAPI.API.Controllers
             return Ok(resultadoDTO);
         }
 
-        
+        [HttpGet("por-municipio")]
+        [ProducesResponseType(typeof(ResultadoDTO<IEnumerable<Contribuyente>>), StatusCodes.Status200OK)]
+        public async Task<ActionResult<ResultadoDTO<IEnumerable<Contribuyente>>>> ContribuyentesporMunicipio()
+        {
+            _logger.LogInformation("Obteniendo todos los contribuyentes del municipio");
+
+            // Obtener el IdMunicipio desde el token
+            var idMunicipioClaim = User.Claims.FirstOrDefault(c => c.Type == "IdMunicipio");
+            if (idMunicipioClaim == null)
+            {
+                return Unauthorized(ResultadoDTO<IEnumerable<Contribuyente>>.Fallido("El Token no contiene IdMunicipio"));
+            }
+
+            int idMunicipio = int.Parse(idMunicipioClaim.Value);
+
+            // Obtener todos los contribuyentes y filtrar por municipio
+            var resultado = await _baseService.GetAllAsync();
+            var filtrados = resultado.Where(c => c.IdMunicipio == idMunicipio);
+
+            var resultadoMapeado = _mapper.Map<IEnumerable<Contribuyente>>(filtrados);
+
+            var resultadoDTO = ResultadoDTO<IEnumerable<Contribuyente>>.Exitoso(
+                resultadoMapeado,
+                "Listado de contribuyentes obtenido correctamente"
+            );
+
+            return Ok(resultadoDTO);
+        }
+
+        [HttpGet("celular/{numero}")]
+        [ProducesResponseType(typeof(ResultadoDTO<Contribuyente>), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<ResultadoDTO<Contribuyente>>> GetByCelular(string numero)
+        {
+            _logger.LogInformation("Buscando contribuyente por celular: {Numero}", numero);
+
+            var contribuyente = await _baseService.FindAsync(c => c.Celular == numero);
+            if (contribuyente == null)
+                return NotFound(ResultadoDTO<Contribuyente>.Fallido("No se encontró un contribuyente con ese celular."));
+
+            var dto = _mapper.Map<Contribuyente>(contribuyente);
+            return Ok(ResultadoDTO<Contribuyente>.Exitoso(dto, "Contribuyente encontrado correctamente."));
+        }
+
+        [HttpGet("documento/{numero}")]
+        [ProducesResponseType(typeof(ResultadoDTO<Contribuyente>), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<ResultadoDTO<Contribuyente>>> GetByDocumento(string numero)
+        {
+            _logger.LogInformation("Buscando contribuyente por documento: {Numero}", numero);
+
+            var contribuyente = await _baseService.FindAsync(c => c.NumeroDocumento == numero);
+            if (contribuyente == null)
+                return NotFound(ResultadoDTO<Contribuyente>.Fallido("No se encontró un contribuyente con ese número de documento."));
+
+            var dto = _mapper.Map<Contribuyente>(contribuyente);
+            return Ok(ResultadoDTO<Contribuyente>.Exitoso(dto, "Contribuyente encontrado correctamente."));
+        }
+
+        [HttpPost("actualizar-celular")]
+        [ProducesResponseType(typeof(ResultadoDTO<string>), StatusCodes.Status200OK)]
+        public async Task<ActionResult<ResultadoDTO<string>>> ActualizarCelular([FromBody] ActualizarCelularDTO dto)
+        {
+            _logger.LogInformation($"Actualizando celular para el DNI {dto.NumeroDocumento}");
+
+            var contribuyente = await _baseService.FindAsync(c => c.NumeroDocumento == dto.NumeroDocumento);
+
+            if (contribuyente == null)
+            {
+                return NotFound(ResultadoDTO<string>.Fallido("Contribuyente no encontrado"));
+            }
+
+            contribuyente.Celular = dto.Celular;
+
+            var actualizado = await _baseService.UpdateAsync(contribuyente.Id, contribuyente);
+
+            if (!actualizado)
+            {
+                return BadRequest(ResultadoDTO<string>.Fallido("No se pudo actualizar el celular"));
+            }
+
+            return Ok(ResultadoDTO<string>.Exitoso("Celular actualizado correctamente"));
+        }
+
+
+
         [HttpGet("{id}")]
         [ProducesResponseType(typeof(ResultadoDTO<Contribuyente>), StatusCodes.Status200OK)]
         public async Task<ActionResult<ResultadoDTO<Contribuyente>>> GetById(int id)
