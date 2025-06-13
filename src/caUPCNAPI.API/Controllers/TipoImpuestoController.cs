@@ -30,8 +30,19 @@ namespace caMUNICIPIOSAPI.API.Controllers
         {
             _logger.LogInformation("Obteniendo todos los tipos de impuesto");
 
+            // Obtener el IdMunicipio desde el token
+            var idMunicipioClaim = User.Claims.FirstOrDefault(c => c.Type == "IdMunicipio");
+            if (idMunicipioClaim == null)
+            {
+                return Unauthorized(ResultadoDTO<IEnumerable<TipoImpuesto>>.Fallido("El Token no contiene IdMunicipio"));
+            }
+
+            int idMunicipio = int.Parse(idMunicipioClaim.Value);
+
             var resultado = await _baseService.GetAllAsync();
-            var resultadoMapeado = _mapper.Map<IEnumerable<TipoImpuesto>>(resultado);
+            var filtrados = resultado.Where(c => c.MunicipioId == idMunicipio);
+
+            var resultadoMapeado = _mapper.Map<IEnumerable<TipoImpuesto>>(filtrados);
 
             var resultadoDTO = ResultadoDTO<IEnumerable<TipoImpuesto>>.Exitoso(resultadoMapeado, "Listado de tipos de impuesto obtenido correctamente");
 
@@ -61,7 +72,18 @@ namespace caMUNICIPIOSAPI.API.Controllers
         {
             _logger.LogInformation("Creando un nuevo tipo de impuesto");
 
+            var idMunicipioClaim = User.Claims.FirstOrDefault(c => c.Type == "IdMunicipio");
+            if (idMunicipioClaim == null)
+            {
+                return Unauthorized(ResultadoDTO<IEnumerable<TipoImpuesto>>.Fallido("El Token no contiene IdMunicipio"));
+            }
+
+            int idMunicipio = int.Parse(idMunicipioClaim.Value);
+
             var entity = _mapper.Map<TipoImpuesto>(dto);
+
+            entity.MunicipioId = idMunicipio;
+
             var createdEntity = await _baseService.AddAsync(entity);
             var resultadoMapeado = _mapper.Map<TipoImpuesto>(createdEntity);
 

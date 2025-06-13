@@ -18,5 +18,6 @@ namespace caMUNICIPIOSAPI.Domain.Entities
         public decimal PorcentajeComision { get; set; }
         public string TipoIntegracion { get; set; } = null!;
         public string DetallesIntegracion { get; set; } = null!;
+        public int IdMunicipio { get; set; }
     }
 }

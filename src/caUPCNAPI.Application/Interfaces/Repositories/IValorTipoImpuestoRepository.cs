@@ -8,9 +8,8 @@ using System.Threading.Tasks;
 
 namespace caMUNICIPIOSAPI.Application.Interfaces.Repositories
 {
-    public interface IContribuyenteRepository : IBaseRepository<Contribuyente>
+    public interface IValorTipoImpuestoRepository : IBaseRepository<ValorTipoImpuesto>
     {
-        Task<IEnumerable<Contribuyente>> GetByMunicipioIdAsync(int idMunicipio);
-        Task<bool> UpdateEstadoIdAsync(int id);
+        Task<IEnumerable<NombreTipoImpuestoDTO>> GetNombreTipoImpuesto();
     }
 }

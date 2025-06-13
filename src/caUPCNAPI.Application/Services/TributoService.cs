@@ -46,6 +46,11 @@ namespace caMUNICIPIOSAPI.Application.Services
             return await _repository.ObtenerTributosAgrupados(idContribuyente, periodo);
         }
 
+        public async Task<List<TributoAgrupadoDTO>> ObtenerTributosAgrupadosSinPeriodoAsync(int idContribuyente)
+        {
+            return await _repository.ObtenerTributosAgrupadosSinPeriodo(idContribuyente);
+        }
+
         public async Task<List<TributoContribuyenteDTO>> ObtenerDetalleTributoPorInmuebleAsync(int idContribuyente, int idInmueble, string periodo)
         {
             return await _repository.ObtenerDetalleTributoPorInmuebleAsync(idContribuyente, idInmueble, periodo);

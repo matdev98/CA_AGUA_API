@@ -16,6 +16,7 @@ namespace caMUNICIPIOSAPI.Application.DTOs
         public string Documento { get; set; } = null!;
         public int IdInmueble { get; set; }
         public string Periodo { get; set; } = null!;
+        public DateTime FechaVencimiento { get; set; }
         public decimal Monto { get; set; }
         public int IdEstado { get; set; }
         public string EstadoTributoDescripcion { get; set; } = null!;

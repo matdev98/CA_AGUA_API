@@ -19,10 +19,17 @@ namespace caMUNICIPIOSAPI.Infraestructure.Persistence.Repositories
             _context = context;
         }
 
+        public async Task<IEnumerable<Inmueble>> GetByMunicipioIdAsync(int idMunicipio)
+        {
+            return await _context.Inmuebles
+                .Where(c => c.IdMunicipio == idMunicipio && c.EstadoId == 1)
+                .ToListAsync();
+        }
+
         public async Task<IEnumerable<Inmueble>> GetByContribuyenteIdAsync(int contribuyenteId)
         {
             var inmuebles = await _context.Inmuebles
-                .Where(i => i.IdContribuyente == contribuyenteId)
+                .Where(i => i.IdContribuyente == contribuyenteId && i.EstadoId == 1)
                 .ToListAsync();
 
             var resultado = inmuebles.Select(i => new Inmueble
@@ -41,6 +48,30 @@ namespace caMUNICIPIOSAPI.Infraestructure.Persistence.Repositories
             });
 
             return resultado;
+        }
+
+        public async Task<bool> UpdateEstadoIdAsync(int id)
+        {
+            try
+            {
+                var inmueble = await _context.Inmuebles.FindAsync(id);
+
+                if (inmueble == null)
+                {
+                    return false;
+                }
+
+                inmueble.EstadoId = 2;
+
+                _context.Inmuebles.Update(inmueble);
+                await _context.SaveChangesAsync();
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                throw;
+            }
         }
     }
 

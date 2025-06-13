@@ -6,13 +6,12 @@ using System.Threading.Tasks;
 
 namespace caMUNICIPIOSAPI.Domain.Entities
 {
-    public class Localidad
+    public class CierreCaja
     {
         public int Id { get; set; }
-        public string Departamento { get; set; } = null!;
-        public string Provincia { get; set; } = null!;
-        public string CodigoPostal { get; set; } = null!;
-        public string Nombre { get; set; } = null!;
+        public int IdUsuario { get; set; }
         public int IdMunicipio { get; set; }
+        public decimal Monto { get; set; }
+        public DateTime Fecha { get; set; }
     }
 }

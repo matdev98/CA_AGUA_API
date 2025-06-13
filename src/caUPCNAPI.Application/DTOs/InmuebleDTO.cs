@@ -17,7 +17,6 @@ namespace caMUNICIPIOSAPI.Application.DTOs
         public string Referencias { get; set; } = null!;
         public decimal EvaluoFiscal { get; set; }
         public int EstadoId { get; set; }
-
         public decimal AreaTotal { get; set; }
     }
 

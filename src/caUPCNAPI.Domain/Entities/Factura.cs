@@ -30,5 +30,7 @@ namespace caMUNICIPIOSAPI.Domain.Entities
 
         public DateTime FechaCreacion { get; set; }
 
+        public int IdMunicipio { get; set; }
+
     }
 }

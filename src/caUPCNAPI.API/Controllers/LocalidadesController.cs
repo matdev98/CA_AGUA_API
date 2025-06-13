@@ -32,8 +32,19 @@ namespace caMUNICIPIOSAPI.API.Controllers
         {
             _logger.LogInformation("Obteniendo todos las localidades");
 
+            // Obtener el IdMunicipio desde el token
+            var idMunicipioClaim = User.Claims.FirstOrDefault(c => c.Type == "IdMunicipio");
+            if (idMunicipioClaim == null)
+            {
+                return Unauthorized(ResultadoDTO<IEnumerable<Localidad>>.Fallido("El Token no contiene IdMunicipio"));
+            }
+
+            int idMunicipio = int.Parse(idMunicipioClaim.Value);
+
             var resultado = await _baseService.GetAllAsync();
-            var resultadoMapeado = _mapper.Map<IEnumerable<Localidad>>(resultado);
+            var filtrados = resultado.Where(c => c.IdMunicipio == idMunicipio);
+
+            var resultadoMapeado = _mapper.Map<IEnumerable<Localidad>>(filtrados);
 
             var resultadoDTO = ResultadoDTO<IEnumerable<Localidad>>.Exitoso(resultadoMapeado, "Listado de localidades obtenido correctamente");
 
@@ -63,7 +74,18 @@ namespace caMUNICIPIOSAPI.API.Controllers
         {
             _logger.LogInformation("Creando una nueva localidad");
 
+            var idMunicipioClaim = User.Claims.FirstOrDefault(c => c.Type == "IdMunicipio");
+            if (idMunicipioClaim == null)
+            {
+                return Unauthorized(ResultadoDTO<IEnumerable<Localidad>>.Fallido("El Token no contiene IdMunicipio"));
+            }
+
+            int idMunicipio = int.Parse(idMunicipioClaim.Value);
+
             var entity = _mapper.Map<Localidad>(dto);
+
+            entity.IdMunicipio = idMunicipio;
+
             var createdEntity = await _baseService.AddAsync(entity);
             var resultadoMapeado = _mapper.Map<Localidad>(createdEntity);
 

@@ -8,10 +8,9 @@ using System.Threading.Tasks;
 
 namespace caMUNICIPIOSAPI.Application.Interfaces.Services
 {
-    public interface IInmuebleService : IBaseService<Inmueble>
+    public interface IValorTipoImpuestoService : IBaseService<ValorTipoImpuesto>
     {
-        Task<IEnumerable<Inmueble>> GetByContribuyenteIdAsync(int contribuyenteId);
-        Task<bool> UpdateInmuebleEstadoIdAsync(int id);
+        Task<IEnumerable<NombreTipoImpuestoDTO>> GetNombreTipoImpuestoAsync();
     }
 
 }

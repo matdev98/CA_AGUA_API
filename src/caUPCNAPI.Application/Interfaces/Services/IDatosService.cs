@@ -10,11 +10,11 @@ namespace caMUNICIPIOSAPI.Application.Interfaces.Services
 {
     public interface IDatosService
     {
-        Task<int> CantidadContribuyentesActivosAsync();
-        Task<int> TotalInmueblesRegistradosAsync();
-        Task<List<InmueblesPorTipoDTO>> TotalInmueblesPorTipoAsync();
-        Task<decimal> DeudaTotalAcumuladaAsync();
-        Task<List<TopDeudoresDTO>> TopContribuyentesConMasDeudaAsync();
+        Task<int> CantidadContribuyentesActivosAsync(int idMunicipio);
+        Task<int> TotalInmueblesRegistradosAsync(int idMunicipio);
+        Task<List<InmueblesPorTipoDTO>> TotalInmueblesPorTipoAsync(int idMunicipio);
+        Task<decimal> DeudaTotalAcumuladaAsync(int idMunicipio);
+        Task<List<TopDeudoresDTO>> TopContribuyentesConMasDeudaAsync(int idMunicipio);
     }
 
 }

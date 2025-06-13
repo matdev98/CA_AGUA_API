@@ -30,13 +30,22 @@ namespace caMUNICIPIOSAPI.API.Controllers
 
         [HttpGet]
         [ProducesResponseType(typeof(ResultadoDTO<IEnumerable<Inmueble>>), StatusCodes.Status200OK)]
-        public async Task<ActionResult<ResultadoDTO<IEnumerable<Inmueble>>>> GetAllMunicipios()
+        public async Task<ActionResult<ResultadoDTO<IEnumerable<Inmueble>>>> GetAllInmuebles()
         {
             _logger.LogInformation("Obteniendo todos las auditorias");
 
-            var resultado = await _baseService.GetAllAsync();
-            var resultadoMapeado = _mapper.Map<IEnumerable<Inmueble>>(resultado);
+            var idMunicipioClaim = User.Claims.FirstOrDefault(c => c.Type == "IdMunicipio");
+            if (idMunicipioClaim == null)
+            {
+                return Unauthorized(ResultadoDTO<IEnumerable<Inmueble>>.Fallido("El Token no contiene IdMunicipio"));
+            }
 
+            int idMunicipio = int.Parse(idMunicipioClaim.Value);
+
+            var resultado = await _baseService.GetAllAsync();
+            var filtrados = resultado.Where(c => c.IdMunicipio == idMunicipio && c.EstadoId == 1);
+
+            var resultadoMapeado = _mapper.Map<IEnumerable<Inmueble>>(filtrados);
             var resultadoDTO = ResultadoDTO<IEnumerable<Inmueble>>.Exitoso(resultadoMapeado, "Listado de auditorias obtenido correctamente");
 
             return Ok(resultadoDTO);
@@ -76,15 +85,24 @@ namespace caMUNICIPIOSAPI.API.Controllers
         }
 
 
-
-
         [HttpPost]
         [ProducesResponseType(typeof(ResultadoDTO<Inmueble>), StatusCodes.Status201Created)]
         public async Task<ActionResult<ResultadoDTO<Inmueble>>> CreateBase([FromBody] InmuebleDTO dto)
         {
             _logger.LogInformation("Creando una nueva auditoria");
 
+            var idMunicipioClaim = User.Claims.FirstOrDefault(c => c.Type == "IdMunicipio");
+            if (idMunicipioClaim == null)
+            {
+                return Unauthorized(ResultadoDTO<IEnumerable<Inmueble>>.Fallido("El Token no contiene IdMunicipio"));
+            }
+
+            int idMunicipio = int.Parse(idMunicipioClaim.Value);
+
             var entity = _mapper.Map<Inmueble>(dto);
+
+            entity.IdMunicipio = idMunicipio;
+
             var createdEntity = await _baseService.AddAsync(entity);
             var resultadoMapeado = _mapper.Map<Inmueble>(createdEntity);
 
@@ -118,21 +136,50 @@ namespace caMUNICIPIOSAPI.API.Controllers
             return Ok(resultadoDTO);
         }
 
-        [HttpDelete("{id}")]
-        [ProducesResponseType(typeof(ResultadoDTO<string>), StatusCodes.Status200OK)]
-        public async Task<ActionResult<ResultadoDTO<string>>> Delete(int id)
+        [HttpPut("anular/{id}")] // Ruta descriptiva
+        [ProducesResponseType(typeof(ResultadoDTO<bool>), StatusCodes.Status200OK)]
+        public async Task<ActionResult<ResultadoDTO<bool>>> UpdateInmuebleEstadoToInactive(int id)
         {
-            _logger.LogInformation($"Eliminando Auditoria con ID {id}");
+            _logger.LogInformation($"Intentando actualizar EstadoId del inmueble {id} a 2 (Inactivo).");
 
-            var deleted = await _baseService.DeleteAsync(id);
+            try
+            {
 
-            if (!deleted)
-                return NotFound(ResultadoDTO<string>.Fallido($"No se encontró la Auditoria con ID {id} para eliminar"));
+                bool success = await _inmuebleService.UpdateInmuebleEstadoIdAsync(id);
 
-            var resultadoDTO = ResultadoDTO<string>.Exitoso(null, "Auditoria eliminada correctamente");
-
-            return Ok(resultadoDTO);
+                if (success)
+                {
+                    var resultadoDTO = ResultadoDTO<bool>.Exitoso(true, $"EstadoId del inmueble {id} actualizado a (Inactivo) correctamente.");
+                    return Ok(resultadoDTO);
+                }
+                else
+                {
+                    _logger.LogWarning($"No se pudo actualizar el EstadoId del inmueble {id}. Es posible que no exista.");
+                    return NotFound(ResultadoDTO<bool>.Fallido($"Inmueble con Id: {id} no encontrado o no se pudo actualizar el estado."));
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error al actualizar el EstadoId del inmueble {id}.");
+                return StatusCode(StatusCodes.Status500InternalServerError, ResultadoDTO<bool>.Fallido("Error interno del servidor al actualizar el estado del inmueble."));
+            }
         }
+
+        //[HttpDelete("{id}")]
+        //[ProducesResponseType(typeof(ResultadoDTO<string>), StatusCodes.Status200OK)]
+        //public async Task<ActionResult<ResultadoDTO<string>>> Delete(int id)
+        //{
+        //    _logger.LogInformation($"Eliminando Auditoria con ID {id}");
+
+        //    var deleted = await _baseService.DeleteAsync(id);
+
+        //    if (!deleted)
+        //        return NotFound(ResultadoDTO<string>.Fallido($"No se encontró la Auditoria con ID {id} para eliminar"));
+
+        //    var resultadoDTO = ResultadoDTO<string>.Exitoso(null, "Auditoria eliminada correctamente");
+
+        //    return Ok(resultadoDTO);
+        //}
 
     }
 

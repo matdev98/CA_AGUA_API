@@ -15,5 +15,6 @@ namespace caMUNICIPIOSAPI.Domain.Entities
         public bool TieneTablaValores { get; set; }
         public string ResolucionAsociada { get; set; } = null!;
         public decimal ValorFijo { get; set; }
+        public int EstadoId { get; set; }
     }
 }

@@ -18,10 +18,12 @@ namespace caMUNICIPIOSAPI.API.Controllers
         private readonly IMapper _mapper;
 
         private readonly IBaseService<Contribuyente> _baseService;
+        private readonly IContribuyenteService _contribuyenteService;
 
-        public ContribuyentesController(IBaseService<Contribuyente> baseService, ILogger<ContribuyentesController> logger, IMapper mapper)
+        public ContribuyentesController(IBaseService<Contribuyente> baseService, IContribuyenteService contribuyenteService , ILogger<ContribuyentesController> logger, IMapper mapper)
         {
             _baseService = baseService;
+            _contribuyenteService = contribuyenteService;
             _logger = logger;
             _mapper = mapper;
         }
@@ -57,7 +59,7 @@ namespace caMUNICIPIOSAPI.API.Controllers
 
             // Obtener todos los contribuyentes y filtrar por municipio
             var resultado = await _baseService.GetAllAsync();
-            var filtrados = resultado.Where(c => c.IdMunicipio == idMunicipio);
+            var filtrados = resultado.Where(c => c.IdMunicipio == idMunicipio && c.EstadoId == 1);
 
             var resultadoMapeado = _mapper.Map<IEnumerable<Contribuyente>>(filtrados);
 
@@ -149,7 +151,19 @@ namespace caMUNICIPIOSAPI.API.Controllers
         {
             _logger.LogInformation("Creando un nuevo Contribuyente");
 
+            var idMunicipioClaim = User.Claims.FirstOrDefault(c => c.Type == "IdMunicipio");
+            if (idMunicipioClaim == null)
+            {
+                return Unauthorized(ResultadoDTO<IEnumerable<Contribuyente>>.Fallido("El Token no contiene IdMunicipio"));
+            }
+
+            int idMunicipio = int.Parse(idMunicipioClaim.Value);
+
             var entity = _mapper.Map<Contribuyente>(dto);
+
+            entity.IdMunicipio = idMunicipio;
+           
+
             var createdEntity = await _baseService.AddAsync(entity);
             var resultadoMapeado = _mapper.Map<Contribuyente>(createdEntity);
 
@@ -182,22 +196,51 @@ namespace caMUNICIPIOSAPI.API.Controllers
             return Ok(resultadoDTO);
         }
 
-        
-        [HttpDelete("{id}")]
-        [ProducesResponseType(typeof(ResultadoDTO<string>), StatusCodes.Status200OK)]
-        public async Task<ActionResult<ResultadoDTO<string>>> Delete(int id)
+        [HttpPut("anular/{id}")]
+        [ProducesResponseType(typeof(ResultadoDTO<bool>), StatusCodes.Status200OK)]
+        public async Task<ActionResult<ResultadoDTO<bool>>> UpdateContribuyenteEstadoToInactive(int id)
         {
-            _logger.LogInformation($"Eliminando Contribuyente con ID {id}");
+            _logger.LogInformation($"Intentando actualizar EstadoId del contribuyente {id} a 2 (Inactivo).");
 
-            var deleted = await _baseService.DeleteAsync(id);
+            try
+            {
+                // Llama al método del servicio específico del contribuyente
+                bool success = await _contribuyenteService.UpdateContribuyenteEstadoIdAsync(id);
 
-            if (!deleted)
-                return NotFound(ResultadoDTO<string>.Fallido($"No se encontró el Contribuyente con ID {id} para eliminar"));
-
-            var resultadoDTO = ResultadoDTO<string>.Exitoso(null, "Contribuyente eliminado correctamente");
-
-            return Ok(resultadoDTO);
+                if (success)
+                {
+                    var resultadoDTO = ResultadoDTO<bool>.Exitoso(true, $"EstadoId del contribuyente {id} actualizado a (Inactivo) correctamente.");
+                    return Ok(resultadoDTO);
+                }
+                else
+                {
+                    _logger.LogWarning($"No se pudo actualizar el EstadoId del contribuyente {id}. Es posible que no exista.");
+                    return NotFound(ResultadoDTO<bool>.Fallido($"Contribuyente con Id: {id} no encontrado o no se pudo actualizar el estado."));
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error al actualizar el EstadoId del contribuyente {id}.");
+                return StatusCode(StatusCodes.Status500InternalServerError, ResultadoDTO<bool>.Fallido("Error interno del servidor al actualizar el estado del contribuyente."));
+            }
         }
+
+
+        //[HttpDelete("{id}")]
+        //[ProducesResponseType(typeof(ResultadoDTO<string>), StatusCodes.Status200OK)]
+        //public async Task<ActionResult<ResultadoDTO<string>>> Delete(int id)
+        //{
+        //    _logger.LogInformation($"Eliminando Contribuyente con ID {id}");
+
+        //    var deleted = await _baseService.DeleteAsync(id);
+
+        //    if (!deleted)
+        //        return NotFound(ResultadoDTO<string>.Fallido($"No se encontró el Contribuyente con ID {id} para eliminar"));
+
+        //    var resultadoDTO = ResultadoDTO<string>.Exitoso(null, "Contribuyente eliminado correctamente");
+
+        //    return Ok(resultadoDTO);
+        //}
 
     }
 

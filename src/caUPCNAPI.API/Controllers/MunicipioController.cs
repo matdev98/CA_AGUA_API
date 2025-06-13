@@ -9,7 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace caMUNICIPIOSAPI.API.Controllers
 {
-    [Authorize]
+    
     [ApiController]
     [Route("api/v1/[controller]")]
     public class MunicipiosController : ControllerBase
@@ -26,6 +26,25 @@ namespace caMUNICIPIOSAPI.API.Controllers
             _mapper = mapper;
         }
 
+        [HttpGet("list")] // Un endpoint más específico para la lista simplificada
+        [ProducesResponseType(typeof(ResultadoDTO<IEnumerable<MunicipioListDTO>>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ResultadoDTO<IEnumerable<MunicipioListDTO>>), StatusCodes.Status404NotFound)] // Si no se encuentran datos
+        public async Task<ActionResult<ResultadoDTO<IEnumerable<MunicipioListDTO>>>> GetMunicipiosList()
+        {
+            _logger.LogInformation("Obteniendo lista simplificada de Municipios (Id y Nombre)");
+
+            // Obtener todos los municipios (asumiendo que GetAllAsync devuelve la entidad completa)
+            var municipios = await _baseService.GetAllAsync();
+
+            // Mapear de IEnumerable<Municipio> a IEnumerable<MunicipioListDTO>
+            var municipiosListDTO = _mapper.Map<IEnumerable<MunicipioListDTO>>(municipios);
+
+            var resultadoDTO = ResultadoDTO<IEnumerable<MunicipioListDTO>>.Exitoso(municipiosListDTO, "Lista de municipios (Id y Nombre) obtenida correctamente.");
+
+            return Ok(resultadoDTO);
+        }
+
+        [Authorize]
         [HttpGet]
         [ProducesResponseType(typeof(ResultadoDTO<IEnumerable<Municipio>>), StatusCodes.Status200OK)]
         public async Task<ActionResult<ResultadoDTO<IEnumerable<Municipio>>>> GetAllMunicipios()
@@ -40,6 +59,32 @@ namespace caMUNICIPIOSAPI.API.Controllers
             return Ok(resultadoDTO);
         }
 
+        [Authorize]
+        [HttpGet("por-municipio")]
+        [ProducesResponseType(typeof(ResultadoDTO<IEnumerable<Municipio>>), StatusCodes.Status200OK)]
+        public async Task<ActionResult<ResultadoDTO<IEnumerable<Municipio>>>> GetMunicipioActual()
+        {
+            _logger.LogInformation("Obteniendo todos los Municipios");
+
+            var idMunicipioClaim = User.Claims.FirstOrDefault(c => c.Type == "IdMunicipio");
+            if (idMunicipioClaim == null)
+            {
+                return Unauthorized(ResultadoDTO<IEnumerable<Contribuyente>>.Fallido("El Token no contiene IdMunicipio"));
+            }
+
+            int idMunicipio = int.Parse(idMunicipioClaim.Value);
+
+            var resultado = await _baseService.GetAllAsync();
+            var filtrados = resultado.Where(c => c.Id == idMunicipio);
+
+            var resultadoMapeado = _mapper.Map<IEnumerable<Municipio>>(filtrados);
+
+            var resultadoDTO = ResultadoDTO<IEnumerable<Municipio>>.Exitoso(resultadoMapeado, "Listado de municipios obtenido correctamente");
+
+            return Ok(resultadoDTO);
+        }
+
+        [Authorize]
         [HttpGet("{id}")]
         [ProducesResponseType(typeof(ResultadoDTO<Municipio>), StatusCodes.Status200OK)]
         public async Task<ActionResult<ResultadoDTO<Municipio>>> GetById(int id)
@@ -57,6 +102,7 @@ namespace caMUNICIPIOSAPI.API.Controllers
             return Ok(resultadoDTO);
         }
 
+        [Authorize]
         [HttpPost]
         [ProducesResponseType(typeof(ResultadoDTO<Municipio>), StatusCodes.Status201Created)]
         public async Task<ActionResult<ResultadoDTO<Municipio>>> Create([FromBody] MunicipioDTO dto)
@@ -72,6 +118,7 @@ namespace caMUNICIPIOSAPI.API.Controllers
             return CreatedAtAction(nameof(GetById), new { id = createdEntity.Id }, resultadoDTO);
         }
 
+        [Authorize]
         [HttpPut("{id}")]
         [ProducesResponseType(typeof(ResultadoDTO<string>), StatusCodes.Status200OK)]
         public async Task<ActionResult<ResultadoDTO<string>>> Update(int id, [FromBody] MunicipioDTO dto)
@@ -95,6 +142,7 @@ namespace caMUNICIPIOSAPI.API.Controllers
             return Ok(resultadoDTO);
         }
 
+        [Authorize]
         [HttpDelete("{id}")]
         [ProducesResponseType(typeof(ResultadoDTO<string>), StatusCodes.Status200OK)]
         public async Task<ActionResult<ResultadoDTO<string>>> Delete(int id)

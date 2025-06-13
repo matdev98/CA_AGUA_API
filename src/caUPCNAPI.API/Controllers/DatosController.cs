@@ -26,7 +26,16 @@ namespace caMUNICIPIOSAPI.API.Controllers
         [ProducesResponseType(typeof(ResultadoDTO<CantidadDTO>), StatusCodes.Status200OK)]
         public async Task<ActionResult<ResultadoDTO<CantidadDTO>>> CantidadContribuyentes()
         {
-            var cantidad = await _datosService.CantidadContribuyentesActivosAsync();
+            // Obtener el IdMunicipio desde el token
+            var idMunicipioClaim = User.Claims.FirstOrDefault(c => c.Type == "IdMunicipio");
+            if (idMunicipioClaim == null)
+            {
+                return Unauthorized(ResultadoDTO<IEnumerable<Contribuyente>>.Fallido("El Token no contiene IdMunicipio"));
+            }
+
+            int idMunicipio = int.Parse(idMunicipioClaim.Value);
+
+            var cantidad = await _datosService.CantidadContribuyentesActivosAsync(idMunicipio);
 
             var dto = new CantidadDTO { Cantidad = cantidad };
 
@@ -39,7 +48,16 @@ namespace caMUNICIPIOSAPI.API.Controllers
         [ProducesResponseType(typeof(ResultadoDTO<CantidadDTO>), StatusCodes.Status200OK)]
         public async Task<ActionResult<ResultadoDTO<CantidadDTO>>> TotalInmueblesRegistrados()
         {
-            var cantidad = await _datosService.TotalInmueblesRegistradosAsync();
+            // Obtener el IdMunicipio desde el token
+            var idMunicipioClaim = User.Claims.FirstOrDefault(c => c.Type == "IdMunicipio");
+            if (idMunicipioClaim == null)
+            {
+                return Unauthorized(ResultadoDTO<IEnumerable<Contribuyente>>.Fallido("El Token no contiene IdMunicipio"));
+            }
+
+            int idMunicipio = int.Parse(idMunicipioClaim.Value);
+
+            var cantidad = await _datosService.TotalInmueblesRegistradosAsync(idMunicipio);
 
             var dto = new CantidadDTO { Cantidad = cantidad };
 
@@ -52,7 +70,16 @@ namespace caMUNICIPIOSAPI.API.Controllers
         [ProducesResponseType(typeof(ResultadoDTO<IEnumerable<InmueblesPorTipoDTO>>), StatusCodes.Status200OK)]
         public async Task<ActionResult<ResultadoDTO<IEnumerable<InmueblesPorTipoDTO>>>> TotalInmueblesPorTipo()
         {
-            var resultado = await _datosService.TotalInmueblesPorTipoAsync();
+            // Obtener el IdMunicipio desde el token
+            var idMunicipioClaim = User.Claims.FirstOrDefault(c => c.Type == "IdMunicipio");
+            if (idMunicipioClaim == null)
+            {
+                return Unauthorized(ResultadoDTO<IEnumerable<Contribuyente>>.Fallido("El Token no contiene IdMunicipio"));
+            }
+
+            int idMunicipio = int.Parse(idMunicipioClaim.Value);
+
+            var resultado = await _datosService.TotalInmueblesPorTipoAsync(idMunicipio);
 
             var resultadoDTO = ResultadoDTO<IEnumerable<InmueblesPorTipoDTO>>.Exitoso(
                 resultado, "Listado de inmuebles agrupados por tipo obtenido correctamente"
@@ -65,7 +92,16 @@ namespace caMUNICIPIOSAPI.API.Controllers
         [ProducesResponseType(typeof(ResultadoDTO<decimal>), StatusCodes.Status200OK)]
         public async Task<ActionResult<ResultadoDTO<decimal>>> ObtenerDeudaTotalAcumulada()
         {
-            var deudaTotal = await _datosService.DeudaTotalAcumuladaAsync();
+            // Obtener el IdMunicipio desde el token
+            var idMunicipioClaim = User.Claims.FirstOrDefault(c => c.Type == "IdMunicipio");
+            if (idMunicipioClaim == null)
+            {
+                return Unauthorized(ResultadoDTO<IEnumerable<Contribuyente>>.Fallido("El Token no contiene IdMunicipio"));
+            }
+
+            int idMunicipio = int.Parse(idMunicipioClaim.Value);
+
+            var deudaTotal = await _datosService.DeudaTotalAcumuladaAsync(idMunicipio);
 
             var resultadoDTO = ResultadoDTO<decimal>.Exitoso(deudaTotal, "Deuda total acumulada obtenida correctamente");
 
@@ -76,7 +112,16 @@ namespace caMUNICIPIOSAPI.API.Controllers
         [ProducesResponseType(typeof(ResultadoDTO<IEnumerable<TopDeudoresDTO>>), StatusCodes.Status200OK)]
         public async Task<ActionResult<ResultadoDTO<IEnumerable<TopDeudoresDTO>>>> TopContribuyentesConMasDeuda()
         {
-            var resultado = await _datosService.TopContribuyentesConMasDeudaAsync();
+            // Obtener el IdMunicipio desde el token
+            var idMunicipioClaim = User.Claims.FirstOrDefault(c => c.Type == "IdMunicipio");
+            if (idMunicipioClaim == null)
+            {
+                return Unauthorized(ResultadoDTO<IEnumerable<Contribuyente>>.Fallido("El Token no contiene IdMunicipio"));
+            }
+
+            int idMunicipio = int.Parse(idMunicipioClaim.Value);
+
+            var resultado = await _datosService.TopContribuyentesConMasDeudaAsync(idMunicipio);
 
             var resultadoDTO = ResultadoDTO<IEnumerable<TopDeudoresDTO>>.Exitoso(resultado, "Top 10 contribuyentes con más deuda");
 

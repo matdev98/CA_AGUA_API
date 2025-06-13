@@ -10,7 +10,9 @@ namespace caMUNICIPIOSAPI.Application.Interfaces.Services
 {
     public interface IFacturaService
     {
-        Task<byte[]> GenerarFacturaPorContribuyentePdf(int idContribuyente, string periodo);
+        Task<byte[]> GenerarFacturaPorContribuyentePdf(int idContribuyente, string periodo, int idMunicipio);
+        Task<byte[]> GenerarYGuardarReciboPDFAsync(int idPago, int idContribuyente, int idMunicipio);
+
     }
 
 }

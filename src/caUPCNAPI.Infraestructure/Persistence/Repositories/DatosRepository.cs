@@ -19,26 +19,26 @@ namespace caMUNICIPIOSAPI.Infraestructure.Persistence.Repositories
             _context = context;
         }
 
-        public async Task<int> GetCantidadContribuyentesActivosAsync()
+        public async Task<int> GetCantidadContribuyentesActivosAsync(int idMunicipio)
         {
             var estadoActivoId = await _context.Estados
-                .Where(e => e.Descripcion == "Activo")
+                .Where(e =>e.Descripcion == "Activo")
                 .Select(e => e.Id)
                 .FirstOrDefaultAsync();
 
             return await _context.Contribuyentes
-                .CountAsync(c => c.EstadoId == estadoActivoId);
+                .CountAsync(c =>c.IdMunicipio == idMunicipio && c.EstadoId == estadoActivoId);
         }
 
-        public async Task<int> TotalInmueblesRegistradosAsync()
+        public async Task<int> TotalInmueblesRegistradosAsync(int idMunicipio)
         {
-            return await _context.Inmuebles.CountAsync();
+            return await _context.Inmuebles.CountAsync(c => c.IdMunicipio == idMunicipio);
         }
 
-        public async Task<List<InmueblesPorTipoDTO>> TotalInmueblesPorTipoAsync()
+        public async Task<List<InmueblesPorTipoDTO>> TotalInmueblesPorTipoAsync(int idMunicipio)
         {
             return await _context.Inmuebles
-                .Where(i => i.EstadoId == 1) // Solo inmuebles activos
+                .Where(i =>i.IdMunicipio == idMunicipio && i.EstadoId == 1) // Solo inmuebles activos
                 .Join(_context.TiposInmueble,
                         inmueble => inmueble.IdTipoInmueble,
                         tipo => tipo.Id,
@@ -52,19 +52,19 @@ namespace caMUNICIPIOSAPI.Infraestructure.Persistence.Repositories
                 .ToListAsync();
         }
 
-        public async Task<decimal> DeudaTotalAcumuladaAsync()
+        public async Task<decimal> DeudaTotalAcumuladaAsync(int idMunicipio)
         {
             return await _context.Tributos
-                        .Where(t => t.IdEstadoTributo != 1)
+                        .Where(t =>t.IdMunicipio == idMunicipio && t.IdEstadoTributo != 1)
                         .SumAsync(t => t.Monto);
         }
 
-        public async Task<List<TopDeudoresDTO>> TopContribuyentesConMasDeudaAsync()
+        public async Task<List<TopDeudoresDTO>> TopContribuyentesConMasDeudaAsync(int idMunicipio)
         {
             var resultado = await (from tributo in _context.Tributos
                                    join contribuyente in _context.Contribuyentes
                                        on tributo.IdContribuyente equals contribuyente.Id
-                                   where tributo.IdEstadoTributo != 1
+                                   where tributo.IdMunicipio == idMunicipio && tributo.IdEstadoTributo != 1
                                    group new { tributo, contribuyente } by new
                                    {
                                        contribuyente.Id,

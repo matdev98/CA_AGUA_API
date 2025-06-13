@@ -24,6 +24,20 @@ namespace caMUNICIPIOSAPI.Application.Services
         {
             return await _repository.GetByContribuyenteIdAsync(contribuyenteId);
         }
+
+        public async Task<bool> UpdateInmuebleEstadoIdAsync(int id)
+        {
+            try
+            {
+                // Llama directamente al método del repositorio específico
+                bool success = await _repository.UpdateEstadoIdAsync(id);
+                return success;
+            }
+            catch (Exception ex)
+            {
+                throw; 
+            }
+        }
     }
 
 }

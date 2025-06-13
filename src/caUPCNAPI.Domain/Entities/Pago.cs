@@ -16,6 +16,8 @@ namespace caMUNICIPIOSAPI.Domain.Entities
         public int? IdMedioPago { get; set; }
         public int Idinmueble {  get; set; }
         public string Periodo { get; set; }
+        public int IdCierre { get; set; }
+        public int EstadoId { get; set; }
 
     }
 }
