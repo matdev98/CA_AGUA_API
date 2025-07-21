@@ -26,6 +26,15 @@ namespace caMUNICIPIOSAPI.Infraestructure.Persistence.Repositories
                 .ToListAsync();
         }
 
+        public async Task<IEnumerable<Inmueble>> SearchInmueblesByNameAsync(string nombre)
+        {
+            // Usamos ToLower() para que la búsqueda sea insensible a mayúsculas/minúsculas
+            // y .Contains() para buscar el fragmento en cualquier parte de la calle.
+            return await _context.Inmuebles
+                .Where(i => i.Calle.ToLower().Contains(nombre.ToLower())) // Asumo que buscas por nombre de Calle
+                .ToListAsync();
+        }
+
         public async Task<IEnumerable<Inmueble>> GetByContribuyenteIdAsync(int contribuyenteId)
         {
             var inmuebles = await _context.Inmuebles
@@ -72,6 +81,15 @@ namespace caMUNICIPIOSAPI.Infraestructure.Persistence.Repositories
             {
                 throw;
             }
+        }
+
+        public async Task<IEnumerable<Inmueble>> GetLastAddedInmueblesAsync(int idMunicipio)
+        {
+            return await _context.Inmuebles
+                .Where(i => i.IdMunicipio == idMunicipio && i.EstadoId == 1)
+                .OrderByDescending(i => i.Id) // Ordena por Id de forma descendente (los más nuevos tienen Id más alto)
+                .Take(20)                     // Toma solo los primeros 10
+                .ToListAsync();
         }
     }
 

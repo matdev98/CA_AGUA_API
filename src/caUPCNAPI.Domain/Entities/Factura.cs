@@ -20,7 +20,7 @@ namespace caMUNICIPIOSAPI.Domain.Entities
 
         public DateTime FechaEmision { get; set; }
 
-        public DateTime? FechaVencimiento { get; set; }
+        public DateTime FechaVencimiento { get; set; }
 
         public decimal MontoTotal { get; set; }
 
@@ -31,6 +31,7 @@ namespace caMUNICIPIOSAPI.Domain.Entities
         public DateTime FechaCreacion { get; set; }
 
         public int IdMunicipio { get; set; }
+        public string codigobarra { get; set; }
 
     }
 }

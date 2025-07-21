@@ -82,7 +82,7 @@ namespace caMUNICIPIOSAPI.API.Controllers
 
             var resultado = await _tributoService.GetByContribuyenteIdAsync(contribuyenteId);
 
-            if (!resultado.EsExitoso || resultado.Datos == null || !resultado.Datos.Any())
+            if (!resultado.EsExitoso || resultado.Datos == null)
                 return NotFound(ResultadoDTO<IEnumerable<TributoContribuyenteDTO>>.Fallido(
                     resultado.Errores ?? new List<string> { "No se encontraron tributos para este contribuyente." },
                     "Error al obtener tributos"

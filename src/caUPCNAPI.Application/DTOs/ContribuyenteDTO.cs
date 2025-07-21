@@ -24,6 +24,7 @@ namespace caMUNICIPIOSAPI.Application.DTOs
         public string Email { get; set; } = string.Empty;
         public int? EstadoId { get; set; }
         public int NumeroContribuyente { get; set; }
+        public bool DomicilioInmueble { get; set; } = true;
     }
 
 

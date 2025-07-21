@@ -92,6 +92,7 @@ namespace caMUNICIPIOSAPI.API.Controllers
 
             var entity = _mapper.Map<Pago>(dto);
 
+            entity.FechaPago = DateTime.Now;
             entity.EstadoId = 1;
 
             var createdEntity = await _baseService.AddAsync(entity);

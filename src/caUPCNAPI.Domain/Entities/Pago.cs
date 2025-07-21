@@ -18,6 +18,6 @@ namespace caMUNICIPIOSAPI.Domain.Entities
         public string Periodo { get; set; }
         public int IdCierre { get; set; }
         public int EstadoId { get; set; }
-
+        public int IdMunicipio { get; set; }
     }
 }

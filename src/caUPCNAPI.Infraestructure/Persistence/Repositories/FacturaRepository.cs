@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection.PortableExecutable;
 using System.Text;
 using System.Threading.Tasks;
 using caMUNICIPIOSAPI.Application.DTOs;
 using caMUNICIPIOSAPI.Application.Interfaces.Repositories;
 using caMUNICIPIOSAPI.Domain.Entities;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 
 namespace caMUNICIPIOSAPI.Infraestructure.Persistence.Repositories
@@ -68,6 +70,45 @@ namespace caMUNICIPIOSAPI.Infraestructure.Persistence.Repositories
                 .Where(m => m.Id == idContribuyente)
                 .Select(m => m.NumeroDocumento)
                 .FirstOrDefaultAsync() ?? string.Empty;
+        }
+
+        public async Task<string> CodigoBarra(int idMunicipio, int idFactura, DateTime fechaVencimiento, decimal montototal, string codigoBarraGenerado)
+        {
+            using (var command = _context.Database.GetDbConnection().CreateCommand())
+            {
+                command.CommandText = "dbo.spGenerarCodigoBarras";
+                command.CommandType = System.Data.CommandType.StoredProcedure;
+
+                // Agregar parámetros de entrada
+                var p1 = new SqlParameter("@Comprobante", "CU" + idMunicipio.ToString("D4") + idFactura.ToString("D8"));
+                var p2 = new SqlParameter("@SaldoActual", montototal);
+                var p3 = new SqlParameter("@FechaVen1", fechaVencimiento);
+                var p4 = new SqlParameter("@FechaVen2", fechaVencimiento);
+                var p5 = new SqlParameter("@SeMuestra", 0);
+
+                // Salida
+                var output = new SqlParameter("@CodigoBarras", System.Data.SqlDbType.NChar, 50)
+                {
+                    Direction = System.Data.ParameterDirection.Output
+                };
+
+                command.Parameters.AddRange(new[] { p1, p2, p3, p4, p5, output });
+
+                await _context.Database.OpenConnectionAsync();
+                await command.ExecuteNonQueryAsync();
+                codigoBarraGenerado = output.Value?.ToString();
+                await _context.Database.CloseConnectionAsync();
+
+                return codigoBarraGenerado ?? string.Empty;
+            }
+        }
+
+        public async Task<string> GetLogoMunicipio(int idMunicipio)
+        {
+            return await _context.Municipios
+                .Where(m => m.Id == idMunicipio)
+                .Select(m => m.Logo)
+                .FirstOrDefaultAsync() ?? "";
         }
 
     }

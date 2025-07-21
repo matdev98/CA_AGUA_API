@@ -16,12 +16,14 @@ namespace caMUNICIPIOSAPI.API.Controllers
         private readonly ILogger<TipoImpuestoController> _logger;
         private readonly IMapper _mapper;
         private readonly IBaseService<TipoImpuesto> _baseService;
+        private readonly ITributoService _tributoService;
 
-        public TipoImpuestoController(IBaseService<TipoImpuesto> baseService, ILogger<TipoImpuestoController> logger, IMapper mapper)
+        public TipoImpuestoController(IBaseService<TipoImpuesto> baseService, ITributoService tributoService, ILogger<TipoImpuestoController> logger, IMapper mapper)
         {
             _baseService = baseService;
             _logger = logger;
             _mapper = mapper;
+            _tributoService = tributoService;
         }
 
         [HttpGet]
@@ -127,6 +129,35 @@ namespace caMUNICIPIOSAPI.API.Controllers
                 return NotFound(ResultadoDTO<string>.Fallido($"No se encontró el tipo de impuesto con ID {id} para eliminar"));
 
             var resultadoDTO = ResultadoDTO<string>.Exitoso(null, "Tipo de impuesto eliminado correctamente");
+
+            return Ok(resultadoDTO);
+        }
+
+        [HttpPost("ApplyToAll/{id}")]
+        [ProducesResponseType(typeof(ResultadoDTO<TipoImpuesto>), StatusCodes.Status200OK)]
+        public async Task<ActionResult<ResultadoDTO<string>>> ApplyToAll(int id)
+        {
+            _logger.LogInformation($"Aplicando tipo de impuesto con ID {id} a todos los contribuyentes");
+
+            var idMunicipioClaim = User.Claims.FirstOrDefault(c => c.Type == "IdMunicipio");
+            if (idMunicipioClaim == null)
+            {
+                return Unauthorized(ResultadoDTO<IEnumerable<Contribuyente>>.Fallido("El Token no contiene IdMunicipio"));
+            }
+
+            int idMunicipio = int.Parse(idMunicipioClaim.Value);
+
+            var existingEntity = await _baseService.GetByIdAsync(id);
+
+            if (existingEntity == null)
+                return NotFound(ResultadoDTO<string>.Fallido($"No se encontró el tipo de impuesto con ID {id} para aplicar"));
+
+            var aplicado = await _tributoService.ApplyToAll(existingEntity, idMunicipio);
+
+            if (!aplicado)
+                return NotFound(ResultadoDTO<string>.Fallido($"No se pudo aplicar el tipo de impuesto con ID {id} a todos los contribuyentes"));
+
+            var resultadoDTO = ResultadoDTO<string>.Exitoso(null, "Tipo de impuesto aplicado a todos los contribuyentes correctamente");
 
             return Ok(resultadoDTO);
         }

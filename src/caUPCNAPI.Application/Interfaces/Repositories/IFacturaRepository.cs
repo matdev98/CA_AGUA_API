@@ -16,6 +16,8 @@ namespace caMUNICIPIOSAPI.Application.Interfaces.Repositories
         Task<string> GetMunicipio(int idMunicipio);
         Task<string> GetContribuyente(int idContribuyente);
         Task<Recibo> GetExistingReciboAsync(int idPago, string documentoContribuyente);
+        Task<string> CodigoBarra(int idMunicipio, int idFactura, DateTime fechaVencimiento, decimal montototal, string codigoBarraGenerado);
+        Task<string> GetLogoMunicipio(int idMunicipio);
     }
 
 }

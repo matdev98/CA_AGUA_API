@@ -77,7 +77,6 @@ namespace caMUNICIPIOSAPI.API.Controllers
 
             try
             {
-
                 // Obtener el IdMunicipio desde el token
                 var idMunicipioClaim = User.Claims.FirstOrDefault(c => c.Type == "IdMunicipio");
                 if (idMunicipioClaim == null)

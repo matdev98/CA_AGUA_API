@@ -13,5 +13,6 @@ namespace caMUNICIPIOSAPI.Domain.Entities
         public int IdMunicipio { get; set; }
         public decimal Monto { get; set; }
         public DateTime Fecha { get; set; }
+        public int EstadoId { get; set; }
     }
 }

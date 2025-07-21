@@ -23,5 +23,6 @@ namespace caMUNICIPIOSAPI.Domain.Entities
         public DateTime FechaCreacion { get; set; }
         public string TipoMunicipio { get; set; } = null!;
         public string Jurisdiccion { get; set; } = null!;
+        public string Logo { get; set; } = null!;
     }
 }

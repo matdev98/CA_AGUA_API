@@ -10,7 +10,6 @@ namespace caMUNICIPIOSAPI.Application.DTOs
     {
         public int? IdContribuyente { get; set; }
         public int? IdTributo { get; set; }
-        public DateTime? FechaPago { get; set; }
         public decimal? MontoPagado { get; set; }
         public int? IdMedioPago { get; set; }
         public int Idinmueble { get; set; }

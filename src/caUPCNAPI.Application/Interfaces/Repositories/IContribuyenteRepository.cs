@@ -12,5 +12,8 @@ namespace caMUNICIPIOSAPI.Application.Interfaces.Repositories
     {
         Task<IEnumerable<Contribuyente>> GetByMunicipioIdAsync(int idMunicipio);
         Task<bool> UpdateEstadoIdAsync(int id);
+        Task<IEnumerable<Contribuyente>> GetLast10AddedContribuyentesAsync(int idMunicipio);
+        Task<IEnumerable<Contribuyente>> SearchContribuyentesByNameAsync(string nombreBusqueda, int idMunicipio);
+        Task<IEnumerable<Contribuyente>> Contribuyentes3MesesAdeudados(int idMunicipio);
     }
 }

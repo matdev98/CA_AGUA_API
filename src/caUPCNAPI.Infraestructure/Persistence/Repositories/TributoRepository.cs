@@ -1,8 +1,10 @@
 ﻿using caMUNICIPIOSAPI.Application.DTOs;
 using caMUNICIPIOSAPI.Application.Interfaces.Repositories;
+using caMUNICIPIOSAPI.Application.Interfaces.Services;
 using caMUNICIPIOSAPI.Domain.Entities;
 using caMUNICIPIOSAPI.Infraestructure.Enums;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,10 +16,14 @@ namespace caMUNICIPIOSAPI.Infraestructure.Persistence.Repositories
     public class TributoRepository : BaseRepository<Tributo>, ITributoRepository
     {
         private readonly AppDbContext _context;
+        private readonly IBaseService<ContribuyentesImpuestosVariables> _baseService;
+        private readonly ILogger<ContribuyentesImpuestosVariables> _logger;
 
-        public TributoRepository(AppDbContext context) : base(context)
+        public TributoRepository(IBaseService<ContribuyentesImpuestosVariables> baseService, ILogger<ContribuyentesImpuestosVariables> logger, AppDbContext context) : base(context)
         {
             _context = context;
+            _baseService = baseService;
+            _logger = logger;
         }
 
         public async Task<IEnumerable<TributoContribuyenteDTO>> GetByContribuyenteIdAsync(int contribuyenteId)
@@ -540,7 +546,7 @@ namespace caMUNICIPIOSAPI.Infraestructure.Persistence.Repositories
 
                 // Traemos todos los inmuebles que tengan contribuyente asignado y estén activos
                 var inmuebles = await _context.Inmuebles
-                    .Where(i => i.IdContribuyente != null && i.EstadoId == 1)
+                    .Where(i => i.IdMunicipio == IdMunicipio && i.IdContribuyente != null && i.EstadoId == 1)
                     .ToListAsync();
 
                 foreach (var inmueble in inmuebles)
@@ -597,8 +603,15 @@ namespace caMUNICIPIOSAPI.Infraestructure.Persistence.Repositories
                     }
                 }
 
+                //Aca SP de Codigo de Barra
+
+
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
+
+
+
+
             }
             catch (Exception ex)
             {
@@ -644,6 +657,7 @@ namespace caMUNICIPIOSAPI.Infraestructure.Persistence.Repositories
                     .Where(c =>
                         inmuebleIds.Contains(c.IdInmueble) &&
                         c.IdTipoImpuesto == impuesto.Id &&
+                        c.PeriodoDesde <= ahora &&
                         c.PeriodoHasta >= ahora)
                     .ToListAsync();
 

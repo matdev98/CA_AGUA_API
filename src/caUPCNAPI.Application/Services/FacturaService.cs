@@ -1,6 +1,10 @@
 ﻿using System;
 using System.IO;
 using System.Globalization;
+using System.Drawing;
+using System.Drawing.Imaging;
+using ZXing;
+using ZXing.Common;
 using iText.Kernel.Pdf;
 using iText.Layout;
 using iText.Layout.Element;
@@ -17,7 +21,8 @@ using iText.Html2pdf;
 using caMUNICIPIOSAPI.Application.DTOs;
 using caMUNICIPIOSAPI.Application.Interfaces.Services;
 using caMUNICIPIOSAPI.Application.Interfaces.Repositories;
-using caMUNICIPIOSAPI.Domain.Entities; // Asegúrate de que este DTO esté definido correctamente
+using caMUNICIPIOSAPI.Domain.Entities;
+using Microsoft.Data.SqlClient; // Asegúrate de que este DTO esté definido correctamente
 
 namespace caMUNICIPIOSAPI.Application.Services
 {
@@ -61,11 +66,13 @@ namespace caMUNICIPIOSAPI.Application.Services
                 var facturaExistente = await _facturaRepo.GetByContribuyenteAndPeriodoAsync(idContribuyente, periodo);
 
                 int facturaIdParaPdf = 0;
+                string codigoBarraGeneradopdf = string.Empty;
 
                 if (facturaExistente != null)
                 {
                     _logger.LogInformation($"Ya existe una factura para el contribuyente Id: {idContribuyente} y período: {periodo}. No se generará una nueva.");
                     facturaIdParaPdf = facturaExistente.Id;
+                    codigoBarraGeneradopdf = facturaExistente.codigobarra;
 
                 }
                 else
@@ -76,19 +83,42 @@ namespace caMUNICIPIOSAPI.Application.Services
                     // Crear la entidad Factura
                     var nuevaFactura = new Factura
                     {
+                        IdMunicipio = idMunicipio,
                         IdContribuyente = idContribuyente,
                         Periodo = periodo,
                         FechaEmision = DateTime.Now,
                         FechaVencimiento = DateTime.Now,
                         MontoTotal = montoTotalFactura,
                         Estado = "Pendiente",
-                        FechaCreacion = DateTime.Now
+                        FechaCreacion = DateTime.Now,
+                        codigobarra = ""
                     };
 
                     // Insertar la factura en la base de datos usando el repositorio
                     await _facturaRepo.AddAsync(nuevaFactura);
 
                     facturaIdParaPdf = nuevaFactura.Id;
+
+                    // Llamar al SP para obtener el código de barras
+                    var codigoBarraGenerado = await _facturaRepo.CodigoBarra(
+                        idMunicipio,
+                        nuevaFactura.Id,
+                        nuevaFactura.FechaVencimiento,
+                        nuevaFactura.MontoTotal,
+                        nuevaFactura.codigobarra
+                    );
+
+                    
+                    //Insertar update de codigo de barra
+                    var factura = await _facturaRepo.GetByIdAsync(facturaIdParaPdf);
+                    if (factura != null)
+                    {
+                        factura.codigobarra = codigoBarraGenerado;
+                        await _facturaRepo.UpdateAsync(facturaIdParaPdf,factura);
+
+                        codigoBarraGeneradopdf = factura.codigobarra;
+
+                    }
                 }
 
                 // 3. Crear el documento PDF en memoria
@@ -100,7 +130,7 @@ namespace caMUNICIPIOSAPI.Application.Services
                     document.SetMargins(20, 20, 20, 20);
 
                     // 4. Construir el HTML
-                    string html = await ConstruirHtmlFacturaPorContribuyente(contribuyente, inmueblesAgrupados, periodo, facturaIdParaPdf, idMunicipio);
+                    string html = await ConstruirHtmlFacturaPorContribuyente(contribuyente, inmueblesAgrupados, periodo, codigoBarraGeneradopdf, idMunicipio);
 
                     // 5. Convertir el HTML a PDF
                     using (MemoryStream htmlStream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(html)))
@@ -119,7 +149,7 @@ namespace caMUNICIPIOSAPI.Application.Services
             }
         }
 
-        private async Task<string> ConstruirHtmlFacturaPorContribuyente(Contribuyente contribuyente, List<TributoAgrupadoDTO> inmueblesAgrupados, string periodo, int facturaId, int idMunicipio)
+        private async Task<string> ConstruirHtmlFacturaPorContribuyente(Contribuyente contribuyente, List<TributoAgrupadoDTO> inmueblesAgrupados, string periodo, string codigoBarraGeneradopdf, int idMunicipio)
         {
             string periodoFormateado = periodo; // Inicialmente, mantenemos el original
             if (periodo.Length == 6 && int.TryParse(periodo.Substring(0, 4), out int year) && int.TryParse(periodo.Substring(4, 2), out int month))
@@ -127,6 +157,44 @@ namespace caMUNICIPIOSAPI.Application.Services
                 // Si el formato es YYYYMM y es un número válido, lo formateamos
                 periodoFormateado = $"{month:D2}/{year}"; // Usamos :D2 para asegurar dos dígitos para el mes
             }
+
+            //string codigoFactura = facturaId.ToString("D8");
+
+            // Configurá el generador
+            var writer = new BarcodeWriterPixelData
+            {
+                Format = BarcodeFormat.CODE_128,
+                Options = new EncodingOptions
+                {
+                    Height = 50,
+                    Width = 200,
+                    Margin = 1
+                }
+            };
+
+            // Generá el pixel data
+            var pixelData = writer.Write(codigoBarraGeneradopdf);
+
+            // Convertí a Bitmap
+            using var bitmap = new Bitmap(pixelData.Width, pixelData.Height, PixelFormat.Format32bppRgb);
+            var bitmapData = bitmap.LockBits(
+                new System.Drawing.Rectangle(0, 0, pixelData.Width, pixelData.Height),
+                ImageLockMode.WriteOnly,
+                PixelFormat.Format32bppRgb);
+
+            try
+            {
+                System.Runtime.InteropServices.Marshal.Copy(pixelData.Pixels, 0, bitmapData.Scan0, pixelData.Pixels.Length);
+            }
+            finally
+            {
+                bitmap.UnlockBits(bitmapData);
+            }
+
+            // Convertí a Base64
+            using var ms = new MemoryStream();
+            bitmap.Save(ms, ImageFormat.Png);
+            string base64CodigoBarras = Convert.ToBase64String(ms.ToArray());
 
             string html = $@"
                             <!DOCTYPE html>
@@ -151,6 +219,7 @@ namespace caMUNICIPIOSAPI.Application.Services
                                         margin: 20px auto; /* Centrado y con margen superior/inferior */
                                         background-color: #ffffff;
                                         border-radius: 8px; /* Bordes ligeramente redondeados */
+                                        border: 2px solid #000000;
                                     }}
 
                                     /* Header Section */
@@ -160,9 +229,10 @@ namespace caMUNICIPIOSAPI.Application.Services
                                         align-items: center; /* Alineación centrada verticalmente para logo y texto */
                                         margin-bottom: 15px; /* Más espacio inferior */
                                         padding-bottom: 20px;
-                                        border-bottom: 2px solid #e0e0e0; /* Borde más pronunciado y moderno */
+                                       
                                     }}
                                     .logo-container {{
+                                        
                                         width: 180px; /* Logo un poco más grande */
                                         height: auto;
                                         flex-shrink: 0; /* Evita que el logo se encoja */
@@ -173,10 +243,13 @@ namespace caMUNICIPIOSAPI.Application.Services
                                         height: auto;
                                         display: block;
                                         border-radius: 4px; /* Pequeño redondeado para la imagen */
+ 
                                     }}
                                     .info-factura-contribuyente {{
+                                        padding: 30px;
                                         flex-grow: 1;
-                                        text-align: right;
+                                        text-align: left;
+                                        border: 2px solid #000000; border-radius: 8px;
                                     }}
                                     .info-factura-contribuyente p {{
                                         margin: 0;
@@ -199,7 +272,23 @@ namespace caMUNICIPIOSAPI.Application.Services
                                         margin-top: 15px; /* Más espacio superior */
                                         margin-bottom: 6px; /* Más espacio inferior */
                                         color: #1a1a1a;
-                                        padding-left: 5px;
+                                        padding-left: 10px;
+                                        border: 2px solid #000000; 
+                                        border-radius: 8px;  
+                                        background-color: #e9ecef; /* Fondo más claro para cabeceras */
+                                    }}
+                                      /* Section Titles AZUL */
+                                    .titulo-inmueble-azul {{
+                                        font-size: 14px; /* Título del inmueble más grande */
+                                        font-weight: 600; /* Ligeramente menos bold, más moderno */
+                                        margin-top: 15px; /* Más espacio superior */
+                                        margin-bottom: 6px; /* Más espacio inferior */
+                                        color: #1a1a1a;
+                                        padding-left: 10px;
+                                        border: 2px solid ; 
+                                        border-radius: 8px;  
+                                        background-color: #1976D2; /* Fondo más claro para cabeceras */
+                                        color: white; /* Letra blanca */
                                     }}
 
                                     /* Table Styles */
@@ -224,7 +313,7 @@ namespace caMUNICIPIOSAPI.Application.Services
                                         color: #495057;
                                         font-weight: 600;
                                         text-transform: uppercase; /* Texto en mayúsculas */
-                                        font-size: 11px;
+                                        font-size: 10px;
                                     }}
                                     .tabla-impuestos tr:last-child td {{
                                         border-bottom: none; /* Elimina el borde inferior de la última fila */
@@ -236,11 +325,13 @@ namespace caMUNICIPIOSAPI.Application.Services
 
                                     /* Total Rows */
                                     .total-inmueble-row td {{
+                                        padding: 6px 15px; /* Mayor padding en celdas */
                                         font-size: 14px;
-                                        background-color: #f0f8ff; /* Fondo sutil para el total del inmueble */
-                                        border-top: 2px solid #a8d7ff; /* Borde superior distintivo */
+                                        background-color: #CCCCCC; /* Fondo sutil para el total del inmueble */
+                                        border-top: 2px solid #000000; /* Borde superior distintivo */
                                         font-weight: bold;
                                         color: #000000;
+
                                     }}
                                     .total-inmueble-row td:first-child {{
                                         text-align: left; /* Asegura que el texto ""Total Inmueble"" esté a la izquierda */
@@ -258,6 +349,7 @@ namespace caMUNICIPIOSAPI.Application.Services
                                         margin-top: 30px; /* Más espacio superior */
                                         padding-top: 15px;
                                         color: #000000;
+                                        background-color: #CCCCCC;border-bottom: 1px solid #eeeeee; /* Solo borde inferior */
                                     }}
 
                                     /* Footer */
@@ -272,68 +364,82 @@ namespace caMUNICIPIOSAPI.Application.Services
                                     .footer p {{
                                         margin: 2px 0;
                                     }}
+                                    .barcode-img {{
+                                        display: block;
+                                        margin-left: auto;
+                                        margin-right: 0;
+                                    }}
                                 </style>
                             </head>
                             <body>
-                                <div class=""container"">
-                                    <div class=""top-section"">
-                                        <div class=""logo-container"">
-                                            <img src=""wwwroot/img/LogoTintina.jpg"" alt=""Logo Municipalidad"">
-                                        </div>
-                                        <div class=""info-factura-contribuyente"">
-                                            <p class=""factura-numero""><strong>Factura Nro.:</strong> {facturaId.ToString("D8")}</p>
-                                            <p><strong>Contribuyente:</strong> {contribuyente.Nombres} {contribuyente.Apellidos}</p>
-                                            <p><strong>DNI:</strong> {contribuyente.NumeroDocumento}</p>
-                                            <p><strong>Período:</strong> {periodoFormateado}</p>
-                                        </div>
-                                    </div>";
+                             ";
 
-                                decimal totalGeneral = 0;
-                                var nombremunicipio = await _facturaRepo.GetMunicipio(idMunicipio);
+            var nombremunicipio = await _facturaRepo.GetMunicipio(idMunicipio);
+            var logoMunicipio = await _facturaRepo.GetLogoMunicipio(idMunicipio);
+            html += $@" <div class=""container"">
+                <div class=""top-section"">
+                    <div class=""logo-container"">
+                        <center>
+                        <img src=""wwwroot/img/{logoMunicipio}"" alt=""Logo Municipalidad"">
+                        <h3 class=""titulo-inmueble-azul"">Municipalidad de {nombremunicipio}</h3>
+                        </center>
+                    </div>
+                    <div class=""info-factura-contribuyente"">
+                        <img src=""data:image/png;base64,{base64CodigoBarras}"" alt=""Código de barras"" class=""barcode-img"" />
+                        <p class=""factura-numero""><strong>Factura Nro.:</strong> {codigoBarraGeneradopdf}</p>
+                        <p><strong>Contribuyente:</strong> {contribuyente.Nombres} {contribuyente.Apellidos}</p>
+                        <p><strong>DNI:</strong> {contribuyente.NumeroDocumento}</p>
+                        <p><strong>Período:</strong> {periodoFormateado}</p>
+                    </div>
+                </div>
+                <h3 class=""titulo-inmueble"">Detalle de Factura</h3>
+                ";
 
-                                foreach (var inmuebleAgrupado in inmueblesAgrupados)
-                                {
-                                    html += $@"<h3 class=""titulo-inmueble"">Inmueble: {inmuebleAgrupado.Direccion}</h3>
-                                       <table class=""tabla-impuestos"">
-                                           <thead>
-                                               <tr>
-                                                   <th>Descripción</th>
-                                                   <th class=""text-right"">Monto</th>
-                                               </tr>
-                                           </thead>
-                                           <tbody>";
+            decimal totalGeneral = 0;
 
-                                    var detallesTributosTask = _repository.ObtenerDetalleTributoPorInmuebleAsync(contribuyente.Id, inmuebleAgrupado.IdInmueble, periodo);
-                                    var detallesTributos = await detallesTributosTask;
-                                    decimal totalInmueble = 0;
+            foreach (var inmuebleAgrupado in inmueblesAgrupados)
+            {
+                html += $@"<h3 class=""titulo-inmueble-azul"">Inmueble: {inmuebleAgrupado.Direccion}</h3>
+                    <table class=""tabla-impuestos"">
+                        <thead>
+                            <tr>
+                                <th>Descripción</th>
+                                <th class=""text-right"">Monto</th>
+                            </tr>
+                        </thead>
+                        <tbody>";
+
+                var detallesTributosTask = _repository.ObtenerDetalleTributoPorInmuebleAsync(contribuyente.Id, inmuebleAgrupado.IdInmueble, periodo);
+                var detallesTributos = await detallesTributosTask;
+                decimal totalInmueble = 0;
                                     
 
-                                    foreach (var detalle in detallesTributos)
-                                    {
-                                        html += $@"<tr><td>{detalle.Descripcion}</td><td class=""text-right"">$ {detalle.Monto.ToString("N2", System.Globalization.CultureInfo.GetCultureInfo("es-AR"))}</td></tr>";
-                                        totalInmueble += detalle.Monto;
-                                    }
+                foreach (var detalle in detallesTributos)
+                {
+                    html += $@"<tr><td>{detalle.Descripcion}</td><td class=""text-right"">$ {detalle.Monto.ToString("N2", System.Globalization.CultureInfo.GetCultureInfo("es-AR"))}</td></tr>";
+                    totalInmueble += detalle.Monto;
+                }
 
-                                    html += $@"</tbody>
-                                           <tfoot>
-                                               <tr class=""total-inmueble-row"">
-                                                   <td>Total Inmueble</td>
-                                                   <td class=""text-right"">$ {totalInmueble.ToString("N2", System.Globalization.CultureInfo.GetCultureInfo("es-AR"))}</td>
-                                               </tr>
-                                           </tfoot>
-                                       </table>";
+                html += $@"</tbody>
+                        <tfoot>
+                            <tr class=""total-inmueble-row"">
+                                <td>Total Inmueble</td>
+                                <td class=""text-right"">$ {totalInmueble.ToString("N2", System.Globalization.CultureInfo.GetCultureInfo("es-AR"))}</td>
+                            </tr>
+                        </tfoot>
+                    </table>";
 
-                                    totalGeneral += totalInmueble;
-                                }
+                totalGeneral += totalInmueble;
+            }
 
-                                html += $@"<p class=""total-general""><strong>Total General: $</strong> {totalGeneral.ToString("N2", System.Globalization.CultureInfo.GetCultureInfo("es-AR"))}</p>           
+            html += $@"<p class=""total-general""><strong>Total General: $</strong> {totalGeneral.ToString("N2", System.Globalization.CultureInfo.GetCultureInfo("es-AR"))}</p>           
 
-                                <div class=""footer"">
-                                    <p>Municipalidad de {nombremunicipio} - {DateTime.Now.Year}</p>
-                                </div>
-                                </div>
-                            </body>
-                            </html>";
+            <div class=""footer"">
+                <p>Municipalidad de {nombremunicipio} - {DateTime.Now.Year}</p>
+            </div>
+            </div>
+        </body>
+        </html>";
 
             return html;
         }

@@ -22,6 +22,7 @@ namespace caMUNICIPIOSAPI.Infraestructure.Persistence
         public DbSet<Estado> Estados { get; set; }
         public DbSet<EstadoTributo> EstadoTributos { get; set; }
         public DbSet<Factura> Factura { get; set; }
+        public DbSet<InicioCaja> InicioCaja { get; set; }
         public DbSet<Inmueble> Inmuebles { get; set; }
         public DbSet<InmuebleObra> InmueblesObras { get; set; }
         public DbSet<IntegracionExterna> IntegracionesExternas { get; set; }
@@ -120,6 +121,13 @@ namespace caMUNICIPIOSAPI.Infraestructure.Persistence
             {
                 entity.ToTable("Facturas");
                 entity.HasKey(e => e.Id);
+            });
+
+            modelBuilder.Entity<InicioCaja>(entity =>
+            {
+                entity.ToTable("InicioCaja");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.FechaInicioCaja).HasDefaultValueSql("GETDATE()");
             });
 
             modelBuilder.Entity<Inmueble>(entity =>

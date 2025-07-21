@@ -20,6 +20,34 @@ namespace caMUNICIPIOSAPI.Application.Services
             _repository = repository;
         }
 
+        public async Task<IEnumerable<Inmueble>> GetByMunicipioIdAsync(int idMunicipio)
+        {
+            return await _repository.GetByMunicipioIdAsync(idMunicipio);
+        }
+
+        public async Task<IEnumerable<Inmueble>> SearchInmueblesAsync(string nombre)
+        {
+
+            if (string.IsNullOrWhiteSpace(nombre) || nombre.Length < 3)
+            {
+                
+                throw new ApplicationException("El término de búsqueda debe tener al menos 3 caracteres.");
+            }
+
+            try
+            {
+                var inmuebles = await _repository.SearchInmueblesByNameAsync(nombre);
+
+                return inmuebles;
+            }
+
+            catch (Exception ex)
+            {
+               
+                throw new ApplicationException($"Error al buscar inmuebles por nombre: {ex.Message}", ex);
+            }
+        }
+
         public async Task<IEnumerable<Inmueble>> GetByContribuyenteIdAsync(int contribuyenteId)
         {
             return await _repository.GetByContribuyenteIdAsync(contribuyenteId);
@@ -36,6 +64,20 @@ namespace caMUNICIPIOSAPI.Application.Services
             catch (Exception ex)
             {
                 throw; 
+            }
+        }
+
+        public async Task<IEnumerable<Inmueble>> GetLastInmueblesAsync(int idMunicipio)
+        {
+            try
+            {
+
+                var inmuebles = await _repository.GetLastAddedInmueblesAsync(idMunicipio);
+                return inmuebles;
+            }
+            catch (Exception ex)
+            {
+                throw new ApplicationException("Error al obtener los inmuebles recientes.", ex);
             }
         }
     }

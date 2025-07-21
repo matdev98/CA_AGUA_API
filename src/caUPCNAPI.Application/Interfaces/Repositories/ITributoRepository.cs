@@ -17,5 +17,7 @@ namespace caMUNICIPIOSAPI.Application.Interfaces.Repositories
         Task<List<TributoContribuyenteDTO>> ObtenerDetalleTributoPorInmuebleAsync(int idContribuyente, int idInmueble, string periodo);
         Task<List<TributoContribuyenteDTO>> ObtenerTributosPorPeriodoAsync(string periodo, int idMunicipio);
         Task<List<TributoContribuyenteDTO>> ObtenerTodosLosTributosDelContribuyentePorPeriodo(int idContribuyente, string periodo);
+        Task<List<TipoImpuesto>> GetFijos(int idMunicipio);
+        Task<bool> ApplyToAll(TipoImpuesto impuesto, int idMunicipio);
     }
 }
