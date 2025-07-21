@@ -32,8 +32,20 @@ namespace caMUNICIPIOSAPI.API.Controllers
         {
             _logger.LogInformation("Obteniendo todos los Medios de Pago");
 
+
+            // Obtener el IdMunicipio desde el token
+            var idMunicipioClaim = User.Claims.FirstOrDefault(c => c.Type == "IdMunicipio");
+            if (idMunicipioClaim == null)
+            {
+                return Unauthorized(ResultadoDTO<IEnumerable<MedioPago>>.Fallido("El Token no contiene IdMunicipio"));
+            }
+
+            int idMunicipio = int.Parse(idMunicipioClaim.Value);
+
             var resultado = await _baseService.GetAllAsync();
-            var resultadoMapeado = _mapper.Map<IEnumerable<MedioPago>>(resultado);
+            var filtrados = resultado.Where(c => c.IdMunicipio == idMunicipio);
+
+            var resultadoMapeado = _mapper.Map<IEnumerable<MedioPago>>(filtrados);
 
             var resultadoDTO = ResultadoDTO<IEnumerable<MedioPago>>.Exitoso(resultadoMapeado, "Listado de Medios de Pago obtenido correctamente");
 
@@ -63,7 +75,18 @@ namespace caMUNICIPIOSAPI.API.Controllers
         {
             _logger.LogInformation("Creando un nuevo Medio de Pago");
 
+            var idMunicipioClaim = User.Claims.FirstOrDefault(c => c.Type == "IdMunicipio");
+            if (idMunicipioClaim == null)
+            {
+                return Unauthorized(ResultadoDTO<IEnumerable<MedioPago>>.Fallido("El Token no contiene IdMunicipio"));
+            }
+
+            int idMunicipio = int.Parse(idMunicipioClaim.Value);
+
             var entity = _mapper.Map<MedioPago>(dto);
+
+            entity.IdMunicipio= idMunicipio;
+
             var createdEntity = await _baseService.AddAsync(entity);
             var resultadoMapeado = _mapper.Map<MedioPago>(createdEntity);
 

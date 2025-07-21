@@ -19,5 +19,6 @@ namespace caMUNICIPIOSAPI.Domain.Entities
         public decimal EvaluoFiscal { get; set; }
         public int EstadoId { get; set; }
         public decimal AreaTotal { get; set; }
+        public int IdMunicipio { get; set; }
     }
 }

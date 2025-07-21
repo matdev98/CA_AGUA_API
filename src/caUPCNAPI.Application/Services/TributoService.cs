@@ -27,6 +27,14 @@ namespace caMUNICIPIOSAPI.Application.Services
             {
                 var resultado = await _repository.GetByContribuyenteIdAsync(contribuyenteId);
 
+                if (!resultado.Any())
+                {
+                    return ResultadoDTO<IEnumerable<TributoContribuyenteDTO>>.Exitoso(
+                        resultado,
+                        "No se encontraron tributos para este contribuyente."
+                    );
+                }
+
                 return ResultadoDTO<IEnumerable<TributoContribuyenteDTO>>.Exitoso(
                     resultado,
                     "Tributos del contribuyente obtenidos correctamente"
@@ -46,6 +54,11 @@ namespace caMUNICIPIOSAPI.Application.Services
             return await _repository.ObtenerTributosAgrupados(idContribuyente, periodo);
         }
 
+        public async Task<List<TributoAgrupadoDTO>> ObtenerTributosAgrupadosSinPeriodoAsync(int idContribuyente)
+        {
+            return await _repository.ObtenerTributosAgrupadosSinPeriodo(idContribuyente);
+        }
+
         public async Task<List<TributoContribuyenteDTO>> ObtenerDetalleTributoPorInmuebleAsync(int idContribuyente, int idInmueble, string periodo)
         {
             return await _repository.ObtenerDetalleTributoPorInmuebleAsync(idContribuyente, idInmueble, periodo);
@@ -62,6 +75,15 @@ namespace caMUNICIPIOSAPI.Application.Services
             return await _repository.ObtenerTributosPorPeriodoAsync(periodo, idMunicipio);
         }
 
+        public async Task<List<TipoImpuesto>> GetFijos(int idMunicipio)
+        {
+            return await _repository.GetFijos(idMunicipio);
+        }
+
+        public async Task<bool> ApplyToAll(TipoImpuesto impuesto, int idMunicipio)
+        {
+            return await _repository.ApplyToAll(impuesto, idMunicipio);
+        }
     }
 
 }

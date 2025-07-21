@@ -13,5 +13,6 @@ namespace caMUNICIPIOSAPI.Domain.Entities
         public string Provincia { get; set; } = null!;
         public string CodigoPostal { get; set; } = null!;
         public string Nombre { get; set; } = null!;
+        public int IdMunicipio { get; set; }
     }
 }

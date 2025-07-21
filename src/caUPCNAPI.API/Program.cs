@@ -69,7 +69,9 @@ builder.Services.AddScoped<IInmuebleRepository, InmuebleRepository>();
 builder.Services.AddScoped<IDatosRepository, DatosRepository>();
 builder.Services.AddScoped<IContribuyenteRepository, ContribuyenteRepository>();
 builder.Services.AddScoped<IFacturaRepository, FacturaRepository>();
-
+builder.Services.AddScoped<IValorTipoImpuestoRepository, ValorTipoImpuestoRepository>();
+builder.Services.AddScoped<ICierreCajaRepository, CierreCajaRepository>();
+builder.Services.AddScoped<IInicioCajaRepository, InicioCajaRepository>();
 //builder.Services.AddScoped(typeof(IBaseRepository<>), typeof(BaseRepository<>));
 
 //SERVICES
@@ -82,6 +84,10 @@ builder.Services.AddScoped<IPagoService, PagoService>();
 builder.Services.AddScoped<IInmuebleService, InmuebleService>();
 builder.Services.AddScoped<IDatosService, DatosService>();
 builder.Services.AddScoped<IFacturaService, FacturaService>();
+builder.Services.AddScoped<IContribuyenteService, ContribuyenteService>();
+builder.Services.AddScoped<IValorTipoImpuestoService, ValorTipoImpuestoService>();
+builder.Services.AddScoped<ICierreCajaService, CierreCajaService>();
+builder.Services.AddScoped<IInicioCajaService, InicioCajaService>();
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
 // AutoMapper

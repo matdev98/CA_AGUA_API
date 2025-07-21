@@ -21,29 +21,29 @@ namespace caMUNICIPIOSAPI.Application.Services
             _repository = repository;
         }
 
-        public async Task<int> CantidadContribuyentesActivosAsync()
+        public async Task<int> CantidadContribuyentesActivosAsync(int idMunicipio)
         {
-            return await _repository.GetCantidadContribuyentesActivosAsync();
+            return await _repository.GetCantidadContribuyentesActivosAsync(idMunicipio);
         }
 
-        public async Task<int> TotalInmueblesRegistradosAsync()
+        public async Task<int> TotalInmueblesRegistradosAsync(int idMunicipio)
         {
-            return await _repository.TotalInmueblesRegistradosAsync();
+            return await _repository.TotalInmueblesRegistradosAsync(idMunicipio);
         }
 
-        public async Task<List<InmueblesPorTipoDTO>> TotalInmueblesPorTipoAsync()
+        public async Task<List<InmueblesPorTipoDTO>> TotalInmueblesPorTipoAsync(int idMunicipio)
         {
-            return await _repository.TotalInmueblesPorTipoAsync();
+            return await _repository.TotalInmueblesPorTipoAsync(idMunicipio);
         }
 
-        public async Task<decimal> DeudaTotalAcumuladaAsync()
+        public async Task<decimal> DeudaTotalAcumuladaAsync(int idMunicipio)
         {
-            return await _repository.DeudaTotalAcumuladaAsync();
+            return await _repository.DeudaTotalAcumuladaAsync(idMunicipio);
         }
 
-        public async Task<List<TopDeudoresDTO>> TopContribuyentesConMasDeudaAsync()
+        public async Task<List<TopDeudoresDTO>> TopContribuyentesConMasDeudaAsync(int idMunicipio)
         {
-            return await _repository.TopContribuyentesConMasDeudaAsync();
+            return await _repository.TopContribuyentesConMasDeudaAsync(idMunicipio);
         }
 
 

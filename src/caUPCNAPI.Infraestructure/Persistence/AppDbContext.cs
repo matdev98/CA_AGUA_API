@@ -14,6 +14,7 @@ namespace caMUNICIPIOSAPI.Infraestructure.Persistence
 
         public DbSet<Usuarios> Usuarios { get; set; }
         public DbSet<Auditoria> Auditorias { get; set; }
+        public DbSet<CierreCaja> CierreCaja { get; set; }
         public DbSet<ColaNotificaciones> ColaNotificaciones { get; set; }
         public DbSet<Contribuyente> Contribuyentes { get; set; }
         public DbSet<ContribuyentesImpuestosVariables> ContribuyentesImpuestosVariables { get; set; }
@@ -21,6 +22,7 @@ namespace caMUNICIPIOSAPI.Infraestructure.Persistence
         public DbSet<Estado> Estados { get; set; }
         public DbSet<EstadoTributo> EstadoTributos { get; set; }
         public DbSet<Factura> Factura { get; set; }
+        public DbSet<InicioCaja> InicioCaja { get; set; }
         public DbSet<Inmueble> Inmuebles { get; set; }
         public DbSet<InmuebleObra> InmueblesObras { get; set; }
         public DbSet<IntegracionExterna> IntegracionesExternas { get; set; }
@@ -35,6 +37,7 @@ namespace caMUNICIPIOSAPI.Infraestructure.Persistence
         public DbSet<PlanPago> PlanesPago { get; set; }
         public DbSet<Periodicidad> Periodicidades { get; set; }
         public DbSet<PlantillaNotificacion> PlantillasNotificaciones { get; set; }
+        public DbSet<Recibo> Recibo { get; set; }
         public DbSet<RolPermiso> RolesPermisos { get; set; }
         public DbSet<Rol> Roles { get; set; }
         public DbSet<TipoDocumento> TiposDocumento { get; set; }
@@ -60,6 +63,12 @@ namespace caMUNICIPIOSAPI.Infraestructure.Persistence
             modelBuilder.Entity<Auditoria>(entity =>
             {
                 entity.ToTable("Auditoria");
+                entity.HasKey(e => e.Id);
+            });
+
+            modelBuilder.Entity<CierreCaja>(entity =>
+            {
+                entity.ToTable("CierreCaja");
                 entity.HasKey(e => e.Id);
             });
 
@@ -112,6 +121,13 @@ namespace caMUNICIPIOSAPI.Infraestructure.Persistence
             {
                 entity.ToTable("Facturas");
                 entity.HasKey(e => e.Id);
+            });
+
+            modelBuilder.Entity<InicioCaja>(entity =>
+            {
+                entity.ToTable("InicioCaja");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.FechaInicioCaja).HasDefaultValueSql("GETDATE()");
             });
 
             modelBuilder.Entity<Inmueble>(entity =>
@@ -214,6 +230,8 @@ namespace caMUNICIPIOSAPI.Infraestructure.Persistence
                     .HasColumnName("monto_pagado");
                 entity.Property(e => e.IdMedioPago)
                     .HasColumnName("id_medio_pago");
+                entity.Property(e => e.IdCierre)
+                    .HasColumnName("IdCierre");
             });
 
             modelBuilder.Entity<Permiso>(entity =>
@@ -245,6 +263,13 @@ namespace caMUNICIPIOSAPI.Infraestructure.Persistence
                 entity.ToTable("PlantillaNotificacion");
                 entity.HasKey(e => e.Id);
             });
+
+            modelBuilder.Entity<Recibo>(entity =>
+            {
+                entity.ToTable("Recibos");
+                entity.HasKey(e => e.Id);
+            });
+            
 
             modelBuilder.Entity<RolPermiso>(entity =>
             {

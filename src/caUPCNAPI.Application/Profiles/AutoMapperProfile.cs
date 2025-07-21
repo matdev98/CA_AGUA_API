@@ -101,6 +101,10 @@ namespace caMUNICIPIOSAPI.Application.Profiles
             //INTERESMORA - DTOs
             CreateMap<InteresMora, InteresMoraDTO>().ReverseMap();
 
+            //MUNICIPIO - DTOs
+            CreateMap<Municipio, MunicipioDTO>().ReverseMap();
+            CreateMap<Municipio, MunicipioListDTO>().ReverseMap();
+
             //MEDIOPAGO - DTOs
             CreateMap<MedioPago, MedioPagoDTO>().ReverseMap();
 

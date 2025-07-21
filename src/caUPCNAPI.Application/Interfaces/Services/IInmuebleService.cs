@@ -10,7 +10,11 @@ namespace caMUNICIPIOSAPI.Application.Interfaces.Services
 {
     public interface IInmuebleService : IBaseService<Inmueble>
     {
+        Task<IEnumerable<Inmueble>> GetByMunicipioIdAsync(int idMunicipio);
         Task<IEnumerable<Inmueble>> GetByContribuyenteIdAsync(int contribuyenteId);
+        Task<bool> UpdateInmuebleEstadoIdAsync(int id);
+        Task<IEnumerable<Inmueble>> GetLastInmueblesAsync(int idMunicipio);
+        Task<IEnumerable<Inmueble>> SearchInmueblesAsync(string nombre);
     }
 
 }

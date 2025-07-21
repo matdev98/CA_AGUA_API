@@ -82,7 +82,7 @@ namespace caMUNICIPIOSAPI.API.Controllers
 
             var resultado = await _tributoService.GetByContribuyenteIdAsync(contribuyenteId);
 
-            if (!resultado.EsExitoso || resultado.Datos == null || !resultado.Datos.Any())
+            if (!resultado.EsExitoso || resultado.Datos == null)
                 return NotFound(ResultadoDTO<IEnumerable<TributoContribuyenteDTO>>.Fallido(
                     resultado.Errores ?? new List<string> { "No se encontraron tributos para este contribuyente." },
                     "Error al obtener tributos"
@@ -91,11 +91,21 @@ namespace caMUNICIPIOSAPI.API.Controllers
             return Ok(resultado);
         }
 
-        [HttpGet("tributos/{idMunicipio}/{periodo}")]
+        [HttpGet("tributos/{periodo}")]
         [ProducesResponseType(typeof(ResultadoDTO<List<TributoContribuyenteDTO>>), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<ResultadoDTO<List<TributoContribuyenteDTO>>>> ObtenerTributosPorPeriodo(string periodo, int idMunicipio)
+        public async Task<ActionResult<ResultadoDTO<List<TributoContribuyenteDTO>>>> ObtenerTributosPorPeriodo(string periodo)
         {
+
+            // Obtener el IdMunicipio desde el token
+            var idMunicipioClaim = User.Claims.FirstOrDefault(c => c.Type == "IdMunicipio");
+            if (idMunicipioClaim == null)
+            {
+                return Unauthorized(ResultadoDTO<IEnumerable<Contribuyente>>.Fallido("El Token no contiene IdMunicipio"));
+            }
+
+            int idMunicipio = int.Parse(idMunicipioClaim.Value);
+
             var tributos = await _tributoService.ObtenerTributosPorPeriodoAsync(periodo, idMunicipio);
 
             if (tributos == null || !tributos.Any())
@@ -129,6 +139,31 @@ namespace caMUNICIPIOSAPI.API.Controllers
                 {
                     EsExitoso = false,
                     Errores = new List<string> { "No se encontraron tributos para el contribuyente o periodo especificado." },
+                    Mensaje = "Error al obtener los tributos agrupados."
+                });
+            }
+
+            return Ok(new ResultadoDTO<List<TributoAgrupadoDTO>>
+            {
+                EsExitoso = true,
+                Datos = tributos,
+                Mensaje = "Tributos agrupados obtenidos correctamente."
+            });
+        }
+
+        [HttpGet("tributoAgrupadoSinPeriodo/{idContribuyente:int}")]
+        [ProducesResponseType(typeof(ResultadoDTO<List<TributoAgrupadoDTO>>), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<ResultadoDTO<List<TributoAgrupadoDTO>>>> ObtenerTributoAgrupadoSinPeriodo(int idContribuyente)
+        {
+            var tributos = await _tributoService.ObtenerTributosAgrupadosSinPeriodoAsync(idContribuyente);
+
+            if (tributos == null || !tributos.Any())
+            {
+                return NotFound(new ResultadoDTO<List<TributoAgrupadoDTO>>
+                {
+                    EsExitoso = false,
+                    Errores = new List<string> { "No se encontraron tributos para el contribuyente especificado." },
                     Mensaje = "Error al obtener los tributos agrupados."
                 });
             }

@@ -11,6 +11,10 @@ namespace caMUNICIPIOSAPI.Application.Interfaces.Services
     public interface IContribuyenteService : IBaseService<Contribuyente>
     {
         Task<IEnumerable<Contribuyente>> GetByMunicipioIdAsync(int idMunicipio);
+        Task<bool> UpdateContribuyenteEstadoIdAsync(int id);
+        Task<IEnumerable<Contribuyente>> GetLast10ContribuyentesAsync(int idMunicipio);
+        Task<IEnumerable<Contribuyente>> SearchContribuyentesAsync(string nombreBusqueda, int idMunicipio);
+        Task<IEnumerable<Contribuyente>> Contribuyentes3MesesAdeudados(int idMunicipio);
     }
 
 }

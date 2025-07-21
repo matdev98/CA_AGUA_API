@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using caMUNICIPIOSAPI.Application.DTOs;
 using caMUNICIPIOSAPI.Application.Interfaces.Services;
+using caMUNICIPIOSAPI.Application.Services;
 using caMUNICIPIOSAPI.Domain.Entities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -13,29 +14,47 @@ namespace caMUNICIPIOSAPI.API.Controllers
     [Route("api/v1/[controller]")]
     public class ValorTipoImpuestoController : ControllerBase
     {
+        private readonly IValorTipoImpuestoService _valorTipoImpuestoService;
         private readonly ILogger<ValorTipoImpuestoController> _logger;
         private readonly IMapper _mapper;
         private readonly IBaseService<ValorTipoImpuesto> _baseService;
 
-        public ValorTipoImpuestoController(IBaseService<ValorTipoImpuesto> baseService, ILogger<ValorTipoImpuestoController> logger, IMapper mapper)
+        public ValorTipoImpuestoController(IBaseService<ValorTipoImpuesto> baseService, IValorTipoImpuestoService valorTipoImpuestoService , ILogger<ValorTipoImpuestoController> logger, IMapper mapper)
         {
             _baseService = baseService;
+            _valorTipoImpuestoService = valorTipoImpuestoService;
             _logger = logger;
             _mapper = mapper;
         }
 
-        [HttpGet]
-        [ProducesResponseType(typeof(ResultadoDTO<IEnumerable<ValorTipoImpuesto>>), StatusCodes.Status200OK)]
-        public async Task<ActionResult<ResultadoDTO<IEnumerable<ValorTipoImpuesto>>>> GetAll()
+        [HttpGet] // La ruta específica para este endpoint será /api/ValorTipoImpuesto/detalles-nombre
+        [ProducesResponseType(typeof(ResultadoDTO<IEnumerable<NombreTipoImpuestoDTO>>), StatusCodes.Status200OK)]
+        public async Task<ActionResult<ResultadoDTO<IEnumerable<NombreTipoImpuestoDTO>>>> GetNombresTiposImpuestoConDetalle()
         {
-            _logger.LogInformation("Obteniendo todos los valores tipo impuesto");
+            _logger.LogInformation("Recibida solicitud para obtener nombres y detalles de valores de tipos de impuesto.");
+            try
+            {
+                // Llama al método del servicio para obtener los datos
+                var tiposImpuestoDetalle = await _valorTipoImpuestoService.GetNombreTipoImpuestoAsync();
 
-            var resultado = await _baseService.GetAllAsync();
-            var resultadoMapeado = _mapper.Map<IEnumerable<ValorTipoImpuesto>>(resultado);
+                // Verifica si se encontraron resultados
+                if (tiposImpuestoDetalle == null || !tiposImpuestoDetalle.Any())
+                {
+                    _logger.LogWarning("No se encontraron tipos de impuesto con detalles de valor.");
+                    // Retorna un 404 Not Found si no hay datos
+                    return NotFound(ResultadoDTO<IEnumerable<NombreTipoImpuestoDTO>>.Fallido("No se encontraron tipos de impuesto con detalles de valor."));
+                }
 
-            var resultadoDTO = ResultadoDTO<IEnumerable<ValorTipoImpuesto>>.Exitoso(resultadoMapeado, "Listado de valores tipo impuesto obtenido correctamente");
-
-            return Ok(resultadoDTO);
+                // Si se encontraron datos, retorna un 200 OK con los resultados
+                var resultadoDTO = ResultadoDTO<IEnumerable<NombreTipoImpuestoDTO>>.Exitoso(tiposImpuestoDetalle, "Lista de tipos de impuesto con detalles de valor obtenida correctamente.");
+                return Ok(resultadoDTO);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error en el controlador al obtener los nombres y detalles de valores de tipos de impuesto.");
+                // Retorna un 500 Internal Server Error si ocurre una excepción
+                return StatusCode(StatusCodes.Status500InternalServerError, ResultadoDTO<IEnumerable<NombreTipoImpuestoDTO>>.Fallido("Error interno del servidor al obtener los tipos de impuesto."));
+            }
         }
 
         [HttpGet("{id}")]
