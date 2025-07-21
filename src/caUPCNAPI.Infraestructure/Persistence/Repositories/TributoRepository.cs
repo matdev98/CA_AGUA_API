@@ -607,5 +607,71 @@ namespace caMUNICIPIOSAPI.Infraestructure.Persistence.Repositories
             }
         }
 
+        public async Task<List<TipoImpuesto>> GetFijos(int idMunicipio)
+        {
+            var tributosFijos = await _context.TiposImpuesto
+                .Where(t => t.MunicipioId == idMunicipio && t.EstadoId == 1 && t.CobroFijo) // Aseguramos que sea el tipo de impuesto fijo
+                .Select(t => new TipoImpuesto
+                {
+                    Id = t.Id,
+                    Descripcion = t.Descripcion,
+                    MunicipioId = t.MunicipioId,
+                    CobroFijo = t.CobroFijo,
+                    EstadoId = t.EstadoId
+                })
+                .ToListAsync();
+
+            return tributosFijos;
+        }
+
+        public async Task<bool> ApplyToAll(TipoImpuesto impuesto, int idMunicipio)
+        {
+            try
+            {
+                var ahora = DateTime.Now;
+                var hasta = ahora.AddYears(1);
+
+                var inmuebles = await _context.Inmuebles
+                    .Where(i => i.IdMunicipio == idMunicipio && i.EstadoId == 1)
+                    .ToListAsync();
+
+                if (!inmuebles.Any())
+                    return true;
+
+                var inmuebleIds = inmuebles.Select(i => i.Id).ToList();
+
+                var existentes = await _context.ContribuyentesImpuestosVariables
+                    .Where(c =>
+                        inmuebleIds.Contains(c.IdInmueble) &&
+                        c.IdTipoImpuesto == impuesto.Id &&
+                        c.PeriodoHasta >= ahora)
+                    .ToListAsync();
+
+                var existentesPorInmueble = existentes.ToLookup(e => e.IdInmueble);
+
+                foreach (var i in inmuebles)
+                {
+                    if (!existentesPorInmueble.Contains(i.Id))
+                    {
+                        var nuevoCobro = new ContribuyentesImpuestosVariables
+                        {
+                            IdContribuyente = i.IdContribuyente,
+                            IdTipoImpuesto = impuesto.Id,
+                            IdInmueble = i.Id,
+                            PeriodoDesde = ahora,
+                            PeriodoHasta = hasta
+                        };
+                        await _baseService.AddAsync(nuevoCobro);
+                    }
+                }
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al aplicar impuesto a todos los inmuebles del municipio "+ idMunicipio, idMunicipio);
+                return false;
+            }
+        }
+
     }
 }

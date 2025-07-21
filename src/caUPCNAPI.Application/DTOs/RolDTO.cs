@@ -8,8 +8,8 @@ namespace caMUNICIPIOSAPI.Application.DTOs
 {
     public class RolDTO
     {
-        public string? NombreRol { get; set; }
-        public string? Descripcion { get; set; }
+        public string NombreRol { get; set; } = string.Empty;
+        public string Descripcion { get; set; } = string.Empty;
     }
 
 
