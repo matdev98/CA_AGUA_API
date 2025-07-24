@@ -16,12 +16,14 @@ namespace caMUNICIPIOSAPI.API.Controllers
         private readonly ILogger<RolesController> _logger;
         private readonly IMapper _mapper;
         private readonly IBaseService<Rol> _baseService;
+        private readonly IRolService _rolService;
 
-        public RolesController(IBaseService<Rol> baseService, ILogger<RolesController> logger, IMapper mapper)
+        public RolesController(IBaseService<Rol> baseService, IRolService rolService, ILogger<RolesController> logger, IMapper mapper)
         {
             _baseService = baseService;
             _logger = logger;
             _mapper = mapper;
+            _rolService = rolService;
         }
 
         [HttpGet]
@@ -44,13 +46,13 @@ namespace caMUNICIPIOSAPI.API.Controllers
         {
             _logger.LogInformation($"Obteniendo rol con ID {id}");
 
-            var resultado = await _baseService.GetByIdAsync(id);
+            var resultado = await _rolService.GetByIdAsync(id);
 
             if (resultado == null)
-                return NotFound(ResultadoDTO<Rol>.Fallido($"No se encontró el rol con ID {id}"));
+                return NotFound(ResultadoDTO<RolDTO>.Fallido($"No se encontró el rol con ID {id}"));
 
-            var resultadoMapeado = _mapper.Map<Rol>(resultado);
-            var resultadoDTO = ResultadoDTO<Rol>.Exitoso(resultadoMapeado, "Rol encontrado correctamente");
+            var resultadoMapeado = _mapper.Map<RolDTO>(resultado);
+            var resultadoDTO = ResultadoDTO<RolDTO>.Exitoso(resultadoMapeado, "Rol encontrado correctamente");
 
             return Ok(resultadoDTO);
         }
@@ -76,14 +78,14 @@ namespace caMUNICIPIOSAPI.API.Controllers
         {
             _logger.LogInformation($"Actualizando rol con ID {id}");
 
-            var existingEntity = await _baseService.GetByIdAsync(id);
+            var existingEntity = await _rolService.GetByIdAsync(id);
 
             if (existingEntity == null)
                 return NotFound(ResultadoDTO<string>.Fallido($"No se encontró el rol con ID {id} para actualizar"));
 
             _mapper.Map(dto, existingEntity);
 
-            var updated = await _baseService.UpdateAsync(id, existingEntity);
+            var updated = await _rolService.UpdateAsync(id, existingEntity);
 
             if (!updated)
                 return NotFound(ResultadoDTO<string>.Fallido($"No se pudo actualizar el rol con ID {id}"));
@@ -99,7 +101,7 @@ namespace caMUNICIPIOSAPI.API.Controllers
         {
             _logger.LogInformation($"Eliminando rol con ID {id}");
 
-            var deleted = await _baseService.DeleteAsync(id);
+            var deleted = await _rolService.DeleteAsync(id);
 
             if (!deleted)
                 return NotFound(ResultadoDTO<string>.Fallido($"No se encontró el rol con ID {id} para eliminar"));

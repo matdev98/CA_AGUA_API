@@ -6,6 +6,7 @@ using caMUNICIPIOSAPI.Domain.Entities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using static iText.StyledXmlParser.Jsoup.Select.Evaluator;
 
 namespace caMUNICIPIOSAPI.API.Controllers
 {
@@ -19,13 +20,15 @@ namespace caMUNICIPIOSAPI.API.Controllers
 
         private readonly IBaseService<UsuarioRol> _baseService;
         private readonly IUserService _userService;
+        private readonly IRolService _rolService;
 
-        public UsuarioRolController(IBaseService<UsuarioRol> baseService, IUserService userService , ILogger<UsuarioRolController> logger, IMapper mapper)
+        public UsuarioRolController(IBaseService<UsuarioRol> baseService, IUserService userService, ILogger<UsuarioRolController> logger, IMapper mapper, IRolService rolService)
         {
             _baseService = baseService;
             _logger = logger;
             _mapper = mapper;
             _userService = userService;
+            _rolService = rolService;
         }
 
         [HttpGet]
@@ -78,39 +81,16 @@ namespace caMUNICIPIOSAPI.API.Controllers
             return CreatedAtAction(nameof(GetById), new { Id = createdEntity.IdRol }, resultadoDTO);
         }
 
-        [HttpPut("{id}")]
+        [HttpDelete]
         [ProducesResponseType(typeof(ResultadoDTO<string>), StatusCodes.Status200OK)]
-        public async Task<ActionResult<ResultadoDTO<string>>> Update(int id, [FromBody] UsuarioRolDTO dto)
+        public async Task<ActionResult<ResultadoDTO<string>>> Delete(int idUsuario, int idRol)
         {
-            _logger.LogInformation($"Actualizando Usuario Rol con ID {id}");
+            _logger.LogInformation($"Eliminando conexion del Usuario {idUsuario} con el Rol {idRol}");
 
-            var existingEntity = await _baseService.GetByIdAsync(id);
-
-            if (existingEntity == null)
-                return NotFound(ResultadoDTO<string>.Fallido($"No se encontró el Usuario Rol con ID {id} para actualizar"));
-
-            _mapper.Map(dto, existingEntity); // SOLO mapea campos no nulos
-
-            var updated = await _baseService.UpdateAsync(id, existingEntity);
-
-            if (!updated)
-                return NotFound(ResultadoDTO<string>.Fallido($"No se pudo actualizar el Usuario Rol con ID {id}"));
-
-            var resultadoDTO = ResultadoDTO<string>.Exitoso(null, "Usuario Rol actualizado correctamente");
-
-            return Ok(resultadoDTO);
-        }
-
-        [HttpDelete("{id}")]
-        [ProducesResponseType(typeof(ResultadoDTO<string>), StatusCodes.Status200OK)]
-        public async Task<ActionResult<ResultadoDTO<string>>> Delete(int id)
-        {
-            _logger.LogInformation($"Eliminando Usuario Rol con ID {id}");
-
-            var deleted = await _baseService.DeleteAsync(id);
+            var deleted = await _rolService.DeleteUserRolAsync(idUsuario, idRol);
 
             if (!deleted)
-                return NotFound(ResultadoDTO<string>.Fallido($"No se encontró el Usuario Rol con ID {id} para eliminar"));
+                return NotFound(ResultadoDTO<string>.Fallido($"No se encontró el Usuario {idUsuario} con el Rol {idRol} para eliminar"));
 
             var resultadoDTO = ResultadoDTO<string>.Exitoso(null, "Usuario Rol eliminado correctamente");
 

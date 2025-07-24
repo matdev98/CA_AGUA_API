@@ -16,12 +16,14 @@ namespace caMUNICIPIOSAPI.API.Controllers
         private readonly ILogger<RolPermisoController> _logger;
         private readonly IMapper _mapper;
         private readonly IBaseService<RolPermiso> _baseService;
+        private readonly IRolService _rolService;
 
-        public RolPermisoController(IBaseService<RolPermiso> baseService, ILogger<RolPermisoController> logger, IMapper mapper)
+        public RolPermisoController(IBaseService<RolPermiso> baseService, ILogger<RolPermisoController> logger, IMapper mapper, IRolService rolService)
         {
             _baseService = baseService;
             _logger = logger;
             _mapper = mapper;
+            _rolService = rolService;
         }
 
         [HttpGet]
@@ -34,23 +36,6 @@ namespace caMUNICIPIOSAPI.API.Controllers
             var resultadoMapeado = _mapper.Map<IEnumerable<RolPermiso>>(resultado);
 
             var resultadoDTO = ResultadoDTO<IEnumerable<RolPermiso>>.Exitoso(resultadoMapeado, "Listado de permisos de roles obtenido correctamente");
-
-            return Ok(resultadoDTO);
-        }
-
-        [HttpGet("{id}")]
-        [ProducesResponseType(typeof(ResultadoDTO<RolPermiso>), StatusCodes.Status200OK)]
-        public async Task<ActionResult<ResultadoDTO<RolPermiso>>> GetById(int id)
-        {
-            _logger.LogInformation($"Obteniendo permiso de rol con ID {id}");
-
-            var resultado = await _baseService.GetByIdAsync(id);
-
-            if (resultado == null)
-                return NotFound(ResultadoDTO<RolPermiso>.Fallido($"No se encontró el permiso de rol con ID {id}"));
-
-            var resultadoMapeado = _mapper.Map<RolPermiso>(resultado);
-            var resultadoDTO = ResultadoDTO<RolPermiso>.Exitoso(resultadoMapeado, "Permiso de rol encontrado correctamente");
 
             return Ok(resultadoDTO);
         }
@@ -71,39 +56,16 @@ namespace caMUNICIPIOSAPI.API.Controllers
 
         }
 
-        [HttpPut("{id}")]
+        [HttpDelete]
         [ProducesResponseType(typeof(ResultadoDTO<string>), StatusCodes.Status200OK)]
-        public async Task<ActionResult<ResultadoDTO<string>>> Update(int id, [FromBody] RolPermiso dto)
+        public async Task<ActionResult<ResultadoDTO<string>>> Delete(int idRol, int idPermiso)
         {
-            _logger.LogInformation($"Actualizando permiso de rol con ID {id}");
+            _logger.LogInformation($"Eliminando conexion del permiso {idPermiso} con el rol {idRol}");
 
-            var existingEntity = await _baseService.GetByIdAsync(id);
-
-            if (existingEntity == null)
-                return NotFound(ResultadoDTO<string>.Fallido($"No se encontró el permiso de rol con ID {id} para actualizar"));
-
-            _mapper.Map(dto, existingEntity);
-
-            var updated = await _baseService.UpdateAsync(id, existingEntity);
-
-            if (!updated)
-                return NotFound(ResultadoDTO<string>.Fallido($"No se pudo actualizar el permiso de rol con ID {id}"));
-
-            var resultadoDTO = ResultadoDTO<string>.Exitoso(null, "Permiso de rol actualizado correctamente");
-
-            return Ok(resultadoDTO);
-        }
-
-        [HttpDelete("{id}")]
-        [ProducesResponseType(typeof(ResultadoDTO<string>), StatusCodes.Status200OK)]
-        public async Task<ActionResult<ResultadoDTO<string>>> Delete(int id)
-        {
-            _logger.LogInformation($"Eliminando permiso de rol con ID {id}");
-
-            var deleted = await _baseService.DeleteAsync(id);
+            var deleted = await _rolService.DeleteRolPermisoAsync(idRol, idPermiso);
 
             if (!deleted)
-                return NotFound(ResultadoDTO<string>.Fallido($"No se encontró el permiso de rol con ID {id} para eliminar"));
+                return NotFound(ResultadoDTO<string>.Fallido($"No se encontró la conexion del permiso {idPermiso} con el rol {idRol} para eliminar"));
 
             var resultadoDTO = ResultadoDTO<string>.Exitoso(null, "Permiso de rol eliminado correctamente");
 

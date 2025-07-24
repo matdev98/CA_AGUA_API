@@ -18,10 +18,12 @@ namespace caMUNICIPIOSAPI.API.Controllers
         private readonly IMapper _mapper;
 
         private readonly IBaseService<Permiso> _baseService;
+        private readonly IPermisoService _permisoService;
 
-        public PermisoController(IBaseService<Permiso> baseService, ILogger<PermisoController> logger, IMapper mapper)
+        public PermisoController(IBaseService<Permiso> baseService, IPermisoService permisoService ,ILogger<PermisoController> logger, IMapper mapper)
         {
             _baseService = baseService;
+            _permisoService = permisoService;
             _logger = logger;
             _mapper = mapper;
         }
@@ -46,7 +48,7 @@ namespace caMUNICIPIOSAPI.API.Controllers
         {
             _logger.LogInformation($"Obteniendo permisos con ID {id}");
 
-            var resultado = await _baseService.GetByIdAsync(id);
+            var resultado = await _permisoService.GetByIdAsync(id);
 
             if (resultado == null)
                 return NotFound(ResultadoDTO<Permiso>.Fallido($"No se encontró el permiso con ID {id}"));
@@ -69,7 +71,8 @@ namespace caMUNICIPIOSAPI.API.Controllers
 
             var resultadoDTO = ResultadoDTO<Permiso>.Exitoso(resultadoMapeado, "Permiso creado exitosamente");
 
-            return CreatedAtAction(nameof(GetById), new { IdPermiso = createdEntity.IdPermiso }, resultadoDTO);
+            return CreatedAtAction(nameof(GetById), new { id = createdEntity.IdPermiso }, resultadoDTO);
+
         }
 
         [HttpPut("{id}")]
@@ -78,14 +81,14 @@ namespace caMUNICIPIOSAPI.API.Controllers
         {
             _logger.LogInformation($"Actualizando Permiso con ID {id}");
 
-            var existingEntity = await _baseService.GetByIdAsync(id);
+            var existingEntity = await _permisoService.GetByIdAsync(id);
 
             if (existingEntity == null)
                 return NotFound(ResultadoDTO<string>.Fallido($"No se encontró el permiso con ID {id} para actualizar"));
 
             _mapper.Map(dto, existingEntity); // SOLO mapea campos no nulos
 
-            var updated = await _baseService.UpdateAsync(id, existingEntity);
+            var updated = await _permisoService.UpdateAsync(id, existingEntity);
 
             if (!updated)
                 return NotFound(ResultadoDTO<string>.Fallido($"No se pudo actualizar el permiso con ID {id}"));
@@ -101,7 +104,7 @@ namespace caMUNICIPIOSAPI.API.Controllers
         {
             _logger.LogInformation($"Eliminando Permiso con ID {id}");
 
-            var deleted = await _baseService.DeleteAsync(id);
+            var deleted = await _permisoService.DeleteAsync(id);
 
             if (!deleted)
                 return NotFound(ResultadoDTO<string>.Fallido($"No se encontró el permiso con ID {id} para eliminar"));
