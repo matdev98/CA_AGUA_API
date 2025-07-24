@@ -13,6 +13,8 @@ namespace caMUNICIPIOSAPI.Application.Interfaces.Services
         Task<Usuarios> ValidarCredencialesAsync(string usuario, string clave);
         Task<bool> RegistrarUsuarioAsync(RegistroRequest registro);
         string GenerarToken(Usuarios usuario);
+        string ObtenerRolesUsuario(int usuarioId);
+        List<string> ObtenerPermisosRol(int usuarioId);
     }
 
 }

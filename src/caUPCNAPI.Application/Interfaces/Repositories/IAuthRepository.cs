@@ -12,6 +12,8 @@ namespace caMUNICIPIOSAPI.Application.Interfaces.Repositories
         Task<Usuarios> ObtenerPorNombreUsuarioAsync(string nombreUsuario);
         Task<Usuarios> ObtenerPorEmailAsync(string email);
         Task CrearUsuarioAsync(Usuarios usuario);
+        string ObtenerRolesUsuario(int usuarioId);
+        List<string> ObtenerPermisosRol(int usuarioId);
     }
 
 }

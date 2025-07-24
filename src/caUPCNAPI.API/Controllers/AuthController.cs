@@ -39,7 +39,9 @@ namespace caMUNICIPIOSAPI.API.Controllers
                 NombreUsuario = usuario.NombreUsuario,
                 Email = usuario.Email,
                 NombreCompleto = usuario.NombreCompleto,
-                Activo = usuario.Activo
+                Activo = usuario.Activo,
+                Roles = _authService.ObtenerRolesUsuario(usuario.Id),
+                Permisos = _authService.ObtenerPermisosRol(usuario.Id)
             };
 
             var cookieOptions = new CookieOptions

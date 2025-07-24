@@ -81,6 +81,18 @@ namespace caMUNICIPIOSAPI.Application.Services
 
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
+
+        public string ObtenerRolesUsuario(int usuarioId)
+        {
+            var roles = _authRepository.ObtenerRolesUsuario(usuarioId);
+            return roles;
+        }
+
+        public List<string> ObtenerPermisosRol(int usuarioId)
+        {
+            var permisos = _authRepository.ObtenerPermisosRol(usuarioId);
+            return permisos;
+        }
     }
 
 }

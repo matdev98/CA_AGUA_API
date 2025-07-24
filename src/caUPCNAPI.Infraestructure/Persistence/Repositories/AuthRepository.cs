@@ -35,6 +35,51 @@ namespace caMUNICIPIOSAPI.Infraestructure.Persistence.Repositories
             _context.Usuarios.Add(usuario);
             await _context.SaveChangesAsync();
         }
+
+        public string ObtenerRolesUsuario(int usuarioId)
+        {
+            var idrol = _context.UsuariosRoles
+                .Where(ur => ur.IdUsuario == usuarioId)
+                .Select(ur => ur.IdRol)
+                .FirstOrDefault();
+            if (idrol == 0)
+            {
+                return string.Empty;
+            }
+
+            return _context.Roles
+                .Where(r => r.IdRol == idrol)
+                .Select(r => r.NombreRol)
+                .FirstOrDefault() ?? string.Empty;
+        }
+
+        public List<string> ObtenerPermisosRol(int usuarioId)
+        {
+            var idrol = _context.UsuariosRoles
+                .Where(ur => ur.IdUsuario == usuarioId)
+                .Select(ur => ur.IdRol)
+                .FirstOrDefault();
+
+            if (idrol == 0)
+            {
+                return new List<string>();
+            }
+
+            var permisos = _context.RolesPermisos
+                .Where(rp => rp.IdRol == idrol)
+                .Select(rp => rp.IdPermiso)
+                .ToList();
+
+            if (permisos.Count == 0)
+            {
+                return new List<string>();
+            }
+
+            return _context.Permisos
+                .Where(p => permisos.Contains(p.IdPermiso))
+                .Select(p => p.NombrePermiso)
+                .ToList();
+        }
     }
 
 
