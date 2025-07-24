@@ -15,5 +15,6 @@ namespace caMUNICIPIOSAPI.Application.Interfaces.Repositories
         Task UpdateAsync(Usuarios user);
         Task DeleteAsync(int id);
         Task<Rol> GetRolByIdUsuario(int id);
+        Task<string> GetNombreRol(int idUsuario);
     }
 }

@@ -7,6 +7,7 @@ using caMUNICIPIOSAPI.Domain.Entities;
 using caMUNICIPIOSAPI.Infraestructure.Persistence.Repositories;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using static iText.StyledXmlParser.Jsoup.Select.Evaluator;
 
 namespace caMUNICIPIOSAPI.API.Controllers
 {
@@ -36,32 +37,58 @@ namespace caMUNICIPIOSAPI.API.Controllers
         /// </summary>
         /// <returns></returns>
         [HttpGet]
-        [ProducesResponseType(typeof(ResultadoDTO<IEnumerable<UserDTO>>), StatusCodes.Status200OK)]
-        public async Task<ActionResult<ResultadoDTO<IEnumerable<UserDTO>>>> GetAll()
+        [ProducesResponseType(typeof(ResultadoDTO<IEnumerable<UserConRolDTO>>), StatusCodes.Status200OK)]
+        public async Task<ActionResult<ResultadoDTO<IEnumerable<UserConRolDTO>>>> GetAll()
         {
             _logger.LogInformation("Obteniendo todos los Usuarios");
 
             var resultado = await _baseService.GetAllAsync();
-            var resultadoMapeado = _mapper.Map<IEnumerable<UserDTO>>(resultado);
 
-            var resultadoDTO = ResultadoDTO<IEnumerable<UserDTO>>.Exitoso(resultadoMapeado, "Listado de usuarios obtenido correctamente");
+            var resultadoMapeado = new List<UserConRolDTO>();
+
+            foreach(var x in resultado)
+            {
+                var componeMapeado = new UserConRolDTO
+                {
+                    Id = x.Id,
+                    NombreUsuario = x.NombreUsuario,
+                    Email = x.Email,
+                    NombreCompleto = x.NombreCompleto,
+                    Activo = x.Activo,
+                    IdMunicipio = x.IdMunicipio,
+                    Rol = await _userService.GetNombreRol(x.Id)
+                };
+
+                resultadoMapeado.Add(componeMapeado);
+            }
+
+            var resultadoDTO = ResultadoDTO<IEnumerable<UserConRolDTO>>.Exitoso(resultadoMapeado, "Listado de usuarios obtenido correctamente");
 
             return Ok(resultadoDTO);
         }
 
         [HttpGet("{id}")]
-        [ProducesResponseType(typeof(ResultadoDTO<UserDTO>), StatusCodes.Status200OK)]
-        public async Task<ActionResult<ResultadoDTO<UserDTO>>> GetById(int id)
+        [ProducesResponseType(typeof(ResultadoDTO<UserConRolDTO>), StatusCodes.Status200OK)]
+        public async Task<ActionResult<ResultadoDTO<UserConRolDTO>>> GetById(int id)
         {
             _logger.LogInformation($"Obteniendo usuario con ID {id}");
 
             var resultado = await _baseService.GetByIdAsync(id);
 
             if (resultado == null)
-                return NotFound(ResultadoDTO<UserDTO>.Fallido($"No se encontró el usuario con ID {id}"));
+                return NotFound(ResultadoDTO<UserConRolDTO>.Fallido($"No se encontró el usuario con ID {id}"));
 
-            var resultadoMapeado = _mapper.Map<UserDTO>(resultado);
-            var resultadoDTO = ResultadoDTO<UserDTO>.Exitoso(resultadoMapeado, "Usuario encontrado correctamente");
+            var resultadoMapeado = new UserConRolDTO
+            {
+                Id = resultado.Id,
+                NombreUsuario = resultado.NombreUsuario,
+                Email = resultado.Email,
+                NombreCompleto = resultado.NombreCompleto,
+                Activo = resultado.Activo,
+                IdMunicipio = resultado.IdMunicipio,
+                Rol = await _userService.GetNombreRol(id)
+            };
+            var resultadoDTO = ResultadoDTO<UserConRolDTO>.Exitoso(resultadoMapeado, "Usuario encontrado correctamente");
 
             return Ok(resultadoDTO);
         }

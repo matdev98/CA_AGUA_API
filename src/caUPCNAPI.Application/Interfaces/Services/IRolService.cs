@@ -15,5 +15,6 @@ namespace caMUNICIPIOSAPI.Application.Interfaces.Services
         Task<bool> DeleteAsync(int id);
         Task<bool> DeleteUserRolAsync(int idUsuario, int idRol);
         Task<bool> DeleteRolPermisoAsync(int idRol, int idPermiso);
+        Task<List<string>> GetPermisosRol(int idRol);
     }
 }

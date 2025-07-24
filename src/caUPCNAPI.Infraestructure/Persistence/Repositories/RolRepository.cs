@@ -83,5 +83,25 @@ namespace caMUNICIPIOSAPI.Infraestructure.Persistence.Repositories
             await _context.SaveChangesAsync();
             return true;
         }
+
+        public async Task<List<string>> GetPermisosRol(int idRol)
+        {
+            var permisos = await _context.RolesPermisos
+                                 .Where(rp => rp.IdRol == idRol)
+                                 .Select(rp => rp.IdPermiso)
+                                 .ToListAsync();
+
+            if (permisos == null || !permisos.Any())
+            {
+                return null;
+            }
+
+            var permisosNombres = await _context.Permisos
+                .Where(p => permisos.Contains(p.IdPermiso))
+                .Select(p => p.NombrePermiso)
+                .ToListAsync();
+
+            return permisosNombres;
+        }
     }
 }

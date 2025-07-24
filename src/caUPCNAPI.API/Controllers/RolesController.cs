@@ -27,32 +27,50 @@ namespace caMUNICIPIOSAPI.API.Controllers
         }
 
         [HttpGet]
-        [ProducesResponseType(typeof(ResultadoDTO<IEnumerable<Rol>>), StatusCodes.Status200OK)]
-        public async Task<ActionResult<ResultadoDTO<IEnumerable<Rol>>>> GetAll()
+        [ProducesResponseType(typeof(ResultadoDTO<IEnumerable<RolConPermisoDTO>>), StatusCodes.Status200OK)]
+        public async Task<ActionResult<ResultadoDTO<IEnumerable<RolConPermisoDTO>>>> GetAll()
         {
             _logger.LogInformation("Obteniendo todos los roles");
 
             var resultado = await _baseService.GetAllAsync();
-            var resultadoMapeado = _mapper.Map<IEnumerable<Rol>>(resultado);
+            var resultadoMapeado = new List<RolConPermisoDTO>();
 
-            var resultadoDTO = ResultadoDTO<IEnumerable<Rol>>.Exitoso(resultadoMapeado, "Listado de roles obtenido correctamente");
+            foreach(var x in resultado)
+            {
+                var componeMapeado = new RolConPermisoDTO
+                {
+                    NombreRol = x.NombreRol,
+                    Descripcion = x.Descripcion,
+                    Permisos = await _rolService.GetPermisosRol(x.IdRol)
+                };
+
+                resultadoMapeado.Add(componeMapeado);
+            }
+
+            var resultadoDTO = ResultadoDTO<IEnumerable<RolConPermisoDTO>>.Exitoso(resultadoMapeado, "Listado de roles obtenido correctamente");
 
             return Ok(resultadoDTO);
         }
 
         [HttpGet("{id}")]
-        [ProducesResponseType(typeof(ResultadoDTO<Rol>), StatusCodes.Status200OK)]
-        public async Task<ActionResult<ResultadoDTO<Rol>>> GetById(int id)
+        [ProducesResponseType(typeof(ResultadoDTO<RolConPermisoDTO>), StatusCodes.Status200OK)]
+        public async Task<ActionResult<ResultadoDTO<RolConPermisoDTO>>> GetById(int id)
         {
             _logger.LogInformation($"Obteniendo rol con ID {id}");
 
             var resultado = await _rolService.GetByIdAsync(id);
 
             if (resultado == null)
-                return NotFound(ResultadoDTO<RolDTO>.Fallido($"No se encontró el rol con ID {id}"));
+                return NotFound(ResultadoDTO<RolConPermisoDTO>.Fallido($"No se encontró el rol con ID {id}"));
 
-            var resultadoMapeado = _mapper.Map<RolDTO>(resultado);
-            var resultadoDTO = ResultadoDTO<RolDTO>.Exitoso(resultadoMapeado, "Rol encontrado correctamente");
+            var resultadoMapeado = new RolConPermisoDTO
+            {
+                NombreRol = resultado.NombreRol,
+                Descripcion = resultado.Descripcion,
+                Permisos = await _rolService.GetPermisosRol(id)
+            };
+
+            var resultadoDTO = ResultadoDTO<RolConPermisoDTO>.Exitoso(resultadoMapeado, "Rol encontrado correctamente");
 
             return Ok(resultadoDTO);
         }

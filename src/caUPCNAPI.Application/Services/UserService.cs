@@ -44,5 +44,11 @@ namespace caMUNICIPIOSAPI.Application.Services
             var rol = await _userRepository.GetRolByIdUsuario(id);
             return rol;
         }
+
+        public async Task<string> GetNombreRol(int idUsuario)
+        {
+            var nombreRol = await _userRepository.GetNombreRol(idUsuario);
+            return nombreRol;
+        }
     }
 }

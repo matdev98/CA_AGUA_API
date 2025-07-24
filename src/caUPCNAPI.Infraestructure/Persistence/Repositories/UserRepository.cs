@@ -77,14 +77,31 @@ namespace caMUNICIPIOSAPI.Infraestructure.Persistence.Repositories
             if (idRol == 0)
             {
                 return null;
-            } else
-            {
-                var rol = await _context.Roles
-                                        .Where(r => r.IdRol == idRol)
-                                        .FirstOrDefaultAsync();
-                return rol;
-            }
+            } 
+
+            var rol = await _context.Roles
+                                    .Where(r => r.IdRol == idRol)
+                                    .FirstOrDefaultAsync();
+            return rol;
         }
 
+        public async Task<string> GetNombreRol(int idUsuario)
+        {
+            var idRol = await _context.UsuariosRoles
+                                    .Where(ur => ur.IdUsuario == idUsuario)
+                                    .Select(ur => ur.IdRol)
+                                    .FirstOrDefaultAsync();
+            if (idRol == 0)
+            {
+                return null;
+            }
+
+            var nombreRol = await _context.Roles
+                                    .Where(r => r.IdRol == idRol)
+                                    .Select(r => r.NombreRol)
+                                    .FirstOrDefaultAsync();
+
+            return nombreRol;
+        }
     }
 }
