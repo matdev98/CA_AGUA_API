@@ -39,6 +39,10 @@ namespace caMUNICIPIOSAPI.Application.Services
             return ResultadoDTO<IEnumerable<UserDTO>>.Exitoso(usersDto);
         }
 
-        
+        public async Task<Rol> GetRolByIdUsuario(int id)
+        {
+            var rol = await _userRepository.GetRolByIdUsuario(id);
+            return rol;
+        }
     }
 }

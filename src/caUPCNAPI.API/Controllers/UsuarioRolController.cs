@@ -18,12 +18,14 @@ namespace caMUNICIPIOSAPI.API.Controllers
         private readonly IMapper _mapper;
 
         private readonly IBaseService<UsuarioRol> _baseService;
+        private readonly IUserService _userService;
 
-        public UsuarioRolController(IBaseService<UsuarioRol> baseService, ILogger<UsuarioRolController> logger, IMapper mapper)
+        public UsuarioRolController(IBaseService<UsuarioRol> baseService, IUserService userService , ILogger<UsuarioRolController> logger, IMapper mapper)
         {
             _baseService = baseService;
             _logger = logger;
             _mapper = mapper;
+            _userService = userService;
         }
 
         [HttpGet]
@@ -42,17 +44,21 @@ namespace caMUNICIPIOSAPI.API.Controllers
 
         [HttpGet("{id}")]
         [ProducesResponseType(typeof(ResultadoDTO<UsuarioRol>), StatusCodes.Status200OK)]
-        public async Task<ActionResult<ResultadoDTO<UsuarioRol>>> GetById(int id)
+        public async Task<ActionResult<ResultadoDTO<RolDTO>>> GetById(int id)
         {
             _logger.LogInformation($"Obteniendo Usuario Rol con ID {id}");
 
-            var resultado = await _baseService.GetByIdAsync(id);
+            var resultado = await _userService.GetRolByIdUsuario(id);
 
             if (resultado == null)
-                return NotFound(ResultadoDTO<UsuarioRol>.Fallido($"No se encontró el Usuario Rol con ID {id}"));
+                return NotFound(ResultadoDTO<RolDTO>.Fallido($"No se encontró el Usuario Rol con ID {id}"));
 
-            var resultadoMapeado = _mapper.Map<UsuarioRol>(resultado);
-            var resultadoDTO = ResultadoDTO<UsuarioRol>.Exitoso(resultadoMapeado, "Usuario Rol encontrado correctamente");
+            var resultadoMapeado = new RolDTO
+            {
+                NombreRol = resultado.NombreRol,
+                Descripcion = resultado.Descripcion
+            };
+            var resultadoDTO = ResultadoDTO<RolDTO>.Exitoso(resultadoMapeado, "Usuario Rol encontrado correctamente");
 
             return Ok(resultadoDTO);
         }

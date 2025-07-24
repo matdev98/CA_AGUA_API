@@ -1,4 +1,5 @@
 ﻿using caMUNICIPIOSAPI.Application.DTOs;
+using caMUNICIPIOSAPI.Domain.Entities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,6 +12,6 @@ namespace caMUNICIPIOSAPI.Application.Interfaces.Services
     {
         Task<ResultadoDTO<UserDTO>> ObtenerUserPorIdAsync(int id);
         Task<ResultadoDTO<IEnumerable<UserDTO>>> ObtenerTodosLosUsersAsync();
-        
+        Task<Rol> GetRolByIdUsuario(int id);
     }
 }

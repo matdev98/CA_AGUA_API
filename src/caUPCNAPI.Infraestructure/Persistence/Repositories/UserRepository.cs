@@ -1,4 +1,5 @@
-﻿using caMUNICIPIOSAPI.Application.Interfaces.Repositories;
+﻿using caMUNICIPIOSAPI.Application.DTOs;
+using caMUNICIPIOSAPI.Application.Interfaces.Repositories;
 using caMUNICIPIOSAPI.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -64,6 +65,24 @@ namespace caMUNICIPIOSAPI.Infraestructure.Persistence.Repositories
             {
                 _context.Usuarios.Remove(user);
                 await _context.SaveChangesAsync();
+            }
+        }
+
+        public async Task<Rol> GetRolByIdUsuario(int id)
+        {
+            var idRol = await _context.UsuariosRoles
+                                    .Where(ur => ur.IdUsuario == id)
+                                    .Select(ur => ur.IdRol)
+                                    .FirstOrDefaultAsync();
+            if (idRol == 0)
+            {
+                return null;
+            } else
+            {
+                var rol = await _context.Roles
+                                        .Where(r => r.IdRol == idRol)
+                                        .FirstOrDefaultAsync();
+                return rol;
             }
         }
 
