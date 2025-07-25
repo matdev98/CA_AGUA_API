@@ -39,5 +39,11 @@ namespace caMUNICIPIOSAPI.Application.Services
             var exito = await _permisoRepository.DeleteAsync(id);
             return exito;
         }
+
+        public async Task<List<RolConPermisoDTO>> GetRolesDelPermiso(int idPermiso)
+        {
+            var roles = await _permisoRepository.GetRolesDelPermiso(idPermiso);
+            return roles;
+        }
     }
 }

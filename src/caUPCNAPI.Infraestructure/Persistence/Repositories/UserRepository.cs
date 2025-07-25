@@ -101,7 +101,23 @@ namespace caMUNICIPIOSAPI.Infraestructure.Persistence.Repositories
                                     .Select(r => r.NombreRol)
                                     .FirstOrDefaultAsync();
 
-            return nombreRol;
+            return nombreRol.ToUpper();
+        }
+
+        public async Task<List<UserDTO>> GetUsersByMunicipioAsync(int idMunicipio)
+        {
+            return await _context.Usuarios
+                                 .Where(u => u.IdMunicipio == idMunicipio)
+                                 .Select(u => new UserDTO
+                                 {
+                                     Id = u.Id,
+                                     NombreUsuario = u.NombreUsuario,
+                                     Email = u.Email,
+                                     NombreCompleto = u.NombreCompleto,
+                                     Activo = u.Activo,
+                                     IdMunicipio = u.IdMunicipio
+                                 })
+                                 .ToListAsync();
         }
     }
 }

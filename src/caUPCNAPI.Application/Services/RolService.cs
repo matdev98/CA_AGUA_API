@@ -57,5 +57,11 @@ namespace caMUNICIPIOSAPI.Application.Services
             var permisos = await _rolRepository.GetPermisosRol(idRol);
             return permisos;
         }
+
+        public async Task<List<UserDTO>> GetUsersByRol(int idRol)
+        {
+            var users = await _rolRepository.GetUsersByRol(idRol);
+            return users;
+        }
     }
 }

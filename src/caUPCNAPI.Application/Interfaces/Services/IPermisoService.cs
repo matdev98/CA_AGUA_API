@@ -13,5 +13,6 @@ namespace caMUNICIPIOSAPI.Application.Interfaces.Services
         Task<Permiso> GetByIdAsync(int id);
         Task<bool> UpdateAsync(int id, Permiso dto);
         Task<bool> DeleteAsync(int id);
+        Task<List<RolConPermisoDTO>> GetRolesDelPermiso(int idPermiso);
     }
 }

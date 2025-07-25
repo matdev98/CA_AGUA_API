@@ -66,6 +66,40 @@ namespace caMUNICIPIOSAPI.API.Controllers
             return Ok(resultadoDTO);
         }
 
+        [HttpGet("UsersByRol")]
+        [ProducesResponseType(typeof(ResultadoDTO<UserConRolDTO>), StatusCodes.Status200OK)]
+        public async Task<ActionResult<ResultadoDTO<UserConRolDTO>>> GetUsersByRol(int idRol)
+        {
+            _logger.LogInformation($"Obteniendo Usuarios con el rol {idRol}");
+
+            var resultado = await _rolService.GetUsersByRol(idRol);
+
+            if (resultado == null)
+                return NotFound(ResultadoDTO<UserConRolDTO>.Fallido($"No se encontraron usuarios con el rol {idRol}"));
+
+            var resultadoMapeado = new List<UserConRolDTO>();
+
+            foreach (var x in resultado) 
+            {                 
+                var componeMapeado = new UserConRolDTO
+                {
+                    Id = x.Id,
+                    NombreUsuario = x.NombreUsuario,
+                    Email = x.Email,
+                    NombreCompleto = x.NombreCompleto,
+                    Activo = x.Activo,
+                    IdMunicipio = x.IdMunicipio,
+                    Rol = await _userService.GetNombreRol(x.Id)
+                };
+
+                resultadoMapeado.Add(componeMapeado);
+            }
+
+            var resultadoDTO = ResultadoDTO<IEnumerable<UserConRolDTO>>.Exitoso(resultadoMapeado, "Usuario Rol encontrado correctamente");
+
+            return Ok(resultadoDTO);
+        }
+
         [HttpPost]
         [ProducesResponseType(typeof(ResultadoDTO<UsuarioRol>), StatusCodes.Status201Created)]
         public async Task<ActionResult<ResultadoDTO<UsuarioRol>>> Create([FromBody] UsuarioRolDTO dto)

@@ -1,4 +1,5 @@
-﻿using caMUNICIPIOSAPI.Domain.Entities;
+﻿using caMUNICIPIOSAPI.Application.DTOs;
+using caMUNICIPIOSAPI.Domain.Entities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,5 +16,6 @@ namespace caMUNICIPIOSAPI.Application.Interfaces.Repositories
         Task<bool> DeleteUserRolAsync(int idUsuario, int idRol);
         Task<bool> DeleteRolPermisoAsync(int idRol, int idUsuario);
         Task<List<string>> GetPermisosRol(int idRol);
+        Task<List<UserDTO>> GetUsersByRol(int idRol);
     }
 }

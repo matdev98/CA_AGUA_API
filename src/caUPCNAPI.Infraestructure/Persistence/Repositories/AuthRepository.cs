@@ -47,10 +47,12 @@ namespace caMUNICIPIOSAPI.Infraestructure.Persistence.Repositories
                 return string.Empty;
             }
 
-            return _context.Roles
+            var resultado = _context.Roles
                 .Where(r => r.IdRol == idrol)
                 .Select(r => r.NombreRol)
                 .FirstOrDefault() ?? string.Empty;
+
+            return resultado.ToUpper();
         }
 
         public List<string> ObtenerPermisosRol(int usuarioId)
@@ -77,7 +79,7 @@ namespace caMUNICIPIOSAPI.Infraestructure.Persistence.Repositories
 
             return _context.Permisos
                 .Where(p => permisos.Contains(p.IdPermiso))
-                .Select(p => p.NombrePermiso)
+                .Select(p => p.NombrePermiso.ToUpper())
                 .ToList();
         }
     }

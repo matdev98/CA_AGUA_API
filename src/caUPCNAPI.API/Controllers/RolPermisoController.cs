@@ -17,13 +17,15 @@ namespace caMUNICIPIOSAPI.API.Controllers
         private readonly IMapper _mapper;
         private readonly IBaseService<RolPermiso> _baseService;
         private readonly IRolService _rolService;
+        private readonly IPermisoService _permisoService;
 
-        public RolPermisoController(IBaseService<RolPermiso> baseService, ILogger<RolPermisoController> logger, IMapper mapper, IRolService rolService)
+        public RolPermisoController(IBaseService<RolPermiso> baseService, IPermisoService permisoService, ILogger<RolPermisoController> logger, IMapper mapper, IRolService rolService)
         {
             _baseService = baseService;
             _logger = logger;
             _mapper = mapper;
             _rolService = rolService;
+            _permisoService = permisoService;
         }
 
         [HttpGet]
@@ -36,6 +38,30 @@ namespace caMUNICIPIOSAPI.API.Controllers
             var resultadoMapeado = _mapper.Map<IEnumerable<RolPermiso>>(resultado);
 
             var resultadoDTO = ResultadoDTO<IEnumerable<RolPermiso>>.Exitoso(resultadoMapeado, "Listado de permisos de roles obtenido correctamente");
+
+            return Ok(resultadoDTO);
+        }
+
+        [HttpGet("Permiso")]
+        [ProducesResponseType(typeof(ResultadoDTO<IEnumerable<RolConPermisoDTO>>), StatusCodes.Status200OK)]
+        public async Task<ActionResult<ResultadoDTO<IEnumerable<RolConPermisoDTO>>>> GetRolesDelPermiso(int idPermiso)
+        {
+            _logger.LogInformation($"Obteniendo todos los roles con el permiso {idPermiso}");
+
+            var resultado = await _permisoService.GetRolesDelPermiso(idPermiso);
+            var resultadoMapeado = new List<RolConPermisoDTO>();
+            foreach (var rol in resultado)
+            {
+                var rolDTO = new RolConPermisoDTO
+                {
+                    NombreRol = rol.NombreRol,
+                    Descripcion = rol.Descripcion,
+                    Permisos = rol.Permisos
+                };
+                resultadoMapeado.Add(rolDTO);
+            }
+
+            var resultadoDTO = ResultadoDTO<IEnumerable<RolConPermisoDTO>>.Exitoso(resultadoMapeado, "Listado de permisos de roles obtenido correctamente");
 
             return Ok(resultadoDTO);
         }

@@ -1,4 +1,5 @@
-﻿using caMUNICIPIOSAPI.Domain.Entities;
+﻿using caMUNICIPIOSAPI.Application.DTOs;
+using caMUNICIPIOSAPI.Domain.Entities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,5 +17,6 @@ namespace caMUNICIPIOSAPI.Application.Interfaces.Repositories
         Task DeleteAsync(int id);
         Task<Rol> GetRolByIdUsuario(int id);
         Task<string> GetNombreRol(int idUsuario);
+        Task<List<UserDTO>> GetUsersByMunicipioAsync(int idMunicipio);
     }
 }

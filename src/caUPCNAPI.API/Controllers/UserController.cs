@@ -67,6 +67,44 @@ namespace caMUNICIPIOSAPI.API.Controllers
             return Ok(resultadoDTO);
         }
 
+        [HttpGet("PorMunicipio")]
+        [ProducesResponseType(typeof(ResultadoDTO<IEnumerable<UserConRolDTO>>), StatusCodes.Status200OK)]
+        public async Task<ActionResult<ResultadoDTO<IEnumerable<UserConRolDTO>>>> GetUsersMunicipio()
+        {
+            _logger.LogInformation("Obteniendo todos los Usuarios del municipio");
+
+            var idMunicipioClaim = User.Claims.FirstOrDefault(c => c.Type == "IdMunicipio");
+            if (idMunicipioClaim == null)
+            {
+                return Unauthorized(ResultadoDTO<IEnumerable<Contribuyente>>.Fallido("El Token no contiene IdMunicipio"));
+            }
+            int idMunicipio = int.Parse(idMunicipioClaim.Value);
+
+            var resultado = await _userService.GetUsersMunicipio(idMunicipio);
+
+            var resultadoMapeado = new List<UserConRolDTO>();
+
+            foreach (var x in resultado)
+            {
+                var componeMapeado = new UserConRolDTO
+                {
+                    Id = x.Id,
+                    NombreUsuario = x.NombreUsuario,
+                    Email = x.Email,
+                    NombreCompleto = x.NombreCompleto,
+                    Activo = x.Activo,
+                    IdMunicipio = x.IdMunicipio,
+                    Rol = await _userService.GetNombreRol(x.Id)
+                };
+
+                resultadoMapeado.Add(componeMapeado);
+            }
+
+            var resultadoDTO = ResultadoDTO<IEnumerable<UserConRolDTO>>.Exitoso(resultadoMapeado, "Listado de usuarios obtenido correctamente");
+
+            return Ok(resultadoDTO);
+        }
+
         [HttpGet("{id}")]
         [ProducesResponseType(typeof(ResultadoDTO<UserConRolDTO>), StatusCodes.Status200OK)]
         public async Task<ActionResult<ResultadoDTO<UserConRolDTO>>> GetById(int id)

@@ -14,5 +14,6 @@ namespace caMUNICIPIOSAPI.Application.Interfaces.Services
         Task<ResultadoDTO<IEnumerable<UserDTO>>> ObtenerTodosLosUsersAsync();
         Task<Rol> GetRolByIdUsuario(int id);
         Task<string> GetNombreRol(int id);
+        Task<List<UserDTO>> GetUsersMunicipio(int idMunicipio);
     }
 }
