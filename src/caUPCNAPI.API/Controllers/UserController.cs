@@ -7,6 +7,7 @@ using caMUNICIPIOSAPI.Domain.Entities;
 using caMUNICIPIOSAPI.Infraestructure.Persistence.Repositories;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 using static iText.StyledXmlParser.Jsoup.Select.Evaluator;
 
 namespace caMUNICIPIOSAPI.API.Controllers
@@ -20,15 +21,17 @@ namespace caMUNICIPIOSAPI.API.Controllers
         private readonly IMapper _mapper;
 
         private readonly IUserService _userService;
-        private readonly IBaseService<Usuarios> _baseService;         
+        private readonly IBaseService<Usuarios> _baseService;        
+        private readonly IBaseService<UsuarioRol> _baseUserRolService;
         
 
-        public UsuariosController(IUserService userService, IBaseService<Usuarios> baseService , ILogger<UsuariosController> logger, IMapper mapper)
+        public UsuariosController(IUserService userService, IBaseService<Usuarios> baseService, IBaseService<UsuarioRol> baseUserRolService, ILogger<UsuariosController> logger, IMapper mapper)
         {
             _userService = userService;
             _baseService = baseService;
             _logger = logger;
             _mapper = mapper;
+            _baseUserRolService = baseUserRolService;
         }
 
         ///// BASE REPOSITORY PRUEBA
@@ -137,9 +140,40 @@ namespace caMUNICIPIOSAPI.API.Controllers
         {
             _logger.LogInformation("Creando un nuevo usuario");
 
-            var entity = _mapper.Map<Usuarios>(dto);
-            var createdEntity = await _baseService.AddAsync(entity);
+            var entity = new Usuarios
+            {
+                NombreUsuario = dto.NombreUsuario,
+                Email = dto.Email,
+                ClaveHash = dto.ClaveHash,
+                NombreCompleto = dto.NombreCompleto,
+                Activo = dto.Activo ?? true,
+                IdMunicipio = dto.idMunicipio
+            };
+            var existente = await _userService.CheckUsername(entity.NombreUsuario, entity.Email);
+            if (existente)
+            {
+                return BadRequest(ResultadoDTO<UserDTO>.Fallido("Ya existe un usuario con el mismo nombre de usuario o email."));
+            }
+            var createdEntity = await _userService.CreateUser(entity);
             var resultadoMapeado = _mapper.Map<UserDTO>(createdEntity);
+
+            string idUsuario = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (idUsuario != null)
+            {
+                int id = int.Parse(idUsuario);
+
+                var usuarioRol = new UsuarioRol
+                {
+                    IdUsuario = createdEntity.Id,
+                    IdRol = dto.IdRol,
+                    OpCrea = id
+                };
+
+                usuarioRol = await _baseUserRolService.AddAsync(usuarioRol);
+            }
+
+
 
             var resultadoDTO = ResultadoDTO<UserDTO>.Exitoso(resultadoMapeado, "Usuario creado exitosamente");
 
@@ -159,6 +193,11 @@ namespace caMUNICIPIOSAPI.API.Controllers
 
             _mapper.Map(dto, existingEntity); // SOLO mapea campos no nulos
 
+            var existente = await _userService.CheckUsername(existingEntity.NombreUsuario, existingEntity.Email, id);
+            if (existente)
+            {
+                return BadRequest(ResultadoDTO<string>.Fallido("Ya existe un usuario con el mismo nombre de usuario o email."));
+            }
             var updated = await _baseService.UpdateAsync(id, existingEntity);
 
             if (!updated)

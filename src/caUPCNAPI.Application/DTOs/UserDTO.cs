@@ -23,6 +23,8 @@ namespace caMUNICIPIOSAPI.Application.DTOs
         public string? ClaveHash { get; set; }
         public string? NombreCompleto { get; set; }
         public bool? Activo { get; set; }
+        public int idMunicipio { get; set; }
+        public int IdRol { get; set; }
     }
 
     public class UserUpdateDTO

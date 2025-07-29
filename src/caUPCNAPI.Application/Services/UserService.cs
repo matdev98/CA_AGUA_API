@@ -56,5 +56,23 @@ namespace caMUNICIPIOSAPI.Application.Services
             var users = await _userRepository.GetUsersByMunicipioAsync(idMunicipio);
             return users;
         }
+
+        public async Task<bool> CheckUsername(string username, string email)
+        {
+            var exists = await _userRepository.CheckUsername(username, email);
+            return exists;
+        }
+
+        public async Task<bool> CheckUsername(string username, string email, int id)
+        {
+            var exists = await _userRepository.CheckUsername(username, email, id);
+            return exists;
+        }
+
+        public async Task<Usuarios> CreateUser(Usuarios entity)
+        {
+            await _userRepository.AddAsync(entity);
+            return entity;
+        }
     }
 }

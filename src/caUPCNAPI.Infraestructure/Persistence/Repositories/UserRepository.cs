@@ -119,5 +119,19 @@ namespace caMUNICIPIOSAPI.Infraestructure.Persistence.Repositories
                                  })
                                  .ToListAsync();
         }
+
+        public async Task<bool> CheckUsername(string username, string email)
+        {
+            return await _context.Usuarios
+                            .Where(u => u.NombreUsuario == username || u.Email == email)
+                            .AnyAsync();
+        }
+
+        public async Task<bool> CheckUsername(string username, string email, int id)
+        {
+            return await _context.Usuarios
+                            .Where(u => (u.NombreUsuario == username || u.Email == email) && u.Id != id)
+                            .AnyAsync();
+        }
     }
 }
