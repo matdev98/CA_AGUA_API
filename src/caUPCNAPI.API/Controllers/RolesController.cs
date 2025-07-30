@@ -39,6 +39,7 @@ namespace caMUNICIPIOSAPI.API.Controllers
             {
                 var componeMapeado = new RolConPermisoDTO
                 {
+                    IdRol = x.IdRol,
                     NombreRol = x.NombreRol,
                     Descripcion = x.Descripcion,
                     Permisos = await _rolService.GetPermisosRol(x.IdRol)
@@ -65,6 +66,7 @@ namespace caMUNICIPIOSAPI.API.Controllers
 
             var resultadoMapeado = new RolConPermisoDTO
             {
+                IdRol = id,
                 NombreRol = resultado.NombreRol,
                 Descripcion = resultado.Descripcion,
                 Permisos = await _rolService.GetPermisosRol(id)
