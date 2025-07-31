@@ -20,5 +20,6 @@ namespace caMUNICIPIOSAPI.Application.Interfaces.Repositories
         Task<List<UserDTO>> GetUsersByMunicipioAsync(int idMunicipio);
         Task<bool> CheckUsername(string username, string email);
         Task<bool> CheckUsername(string username, string email, int id);
+        Task<UsuarioRolDTO> GetUsuarioRol(int id);
     }
 }

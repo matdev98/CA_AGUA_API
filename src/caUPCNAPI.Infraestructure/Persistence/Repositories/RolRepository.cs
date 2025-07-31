@@ -131,5 +131,14 @@ namespace caMUNICIPIOSAPI.Infraestructure.Persistence.Repositories
 
             return userDetails;
         }
+
+        public async Task<int> GetIdRol(string nombreRol)
+        {
+            var idRol = await _context.Roles
+                .Where(r => r.NombreRol == nombreRol)
+                .Select(r => r.IdRol)
+                .FirstOrDefaultAsync();
+            return idRol;
+        }
     }
 }

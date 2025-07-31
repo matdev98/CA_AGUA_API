@@ -18,6 +18,7 @@ namespace caMUNICIPIOSAPI.API.Controllers
     public class UsuariosController : ControllerBase
     {
         private readonly ILogger<UsuariosController> _logger;
+        private readonly IPasswordService _password;
         private readonly IMapper _mapper;
 
         private readonly IUserService _userService;
@@ -25,13 +26,15 @@ namespace caMUNICIPIOSAPI.API.Controllers
         private readonly IBaseService<UsuarioRol> _baseUserRolService;
         
 
-        public UsuariosController(IUserService userService, IBaseService<Usuarios> baseService, IBaseService<UsuarioRol> baseUserRolService, ILogger<UsuariosController> logger, IMapper mapper)
+        public UsuariosController(IUserService userService, IBaseService<Usuarios> baseService, IBaseService<UsuarioRol> baseUserRolService, 
+            ILogger<UsuariosController> logger, IPasswordService password, IMapper mapper)
         {
             _userService = userService;
             _baseService = baseService;
             _logger = logger;
             _mapper = mapper;
             _baseUserRolService = baseUserRolService;
+            _password = password;
         }
 
         ///// BASE REPOSITORY PRUEBA
@@ -144,7 +147,7 @@ namespace caMUNICIPIOSAPI.API.Controllers
             {
                 NombreUsuario = dto.NombreUsuario,
                 Email = dto.Email,
-                ClaveHash = dto.ClaveHash,
+                ClaveHash = _password.HashPassword(dto.ClaveHash),
                 NombreCompleto = dto.NombreCompleto,
                 Activo = dto.Activo ?? true,
                 IdMunicipio = dto.idMunicipio
@@ -173,8 +176,6 @@ namespace caMUNICIPIOSAPI.API.Controllers
                 usuarioRol = await _baseUserRolService.AddAsync(usuarioRol);
             }
 
-
-
             var resultadoDTO = ResultadoDTO<UserDTO>.Exitoso(resultadoMapeado, "Usuario creado exitosamente");
 
             return CreatedAtAction(nameof(GetById), new { id = createdEntity.Id }, resultadoDTO);
@@ -202,6 +203,14 @@ namespace caMUNICIPIOSAPI.API.Controllers
 
             if (!updated)
                 return NotFound(ResultadoDTO<string>.Fallido($"No se pudo actualizar el usuario con ID {id}"));
+
+            // Actualizar el rol del usuario si se proporciona
+            if (dto.idRol != null)
+            {
+                string idUsuario = User.FindFirst(ClaimTypes.NameIdentifier).Value;
+                int idUser = int.Parse(idUsuario);
+                var usuarioRol = await _userService.CambiarRol(id, (int)dto.idRol, idUser);
+            }
 
             var resultadoDTO = ResultadoDTO<string>.Exitoso(null, "Usuario actualizado correctamente");
 

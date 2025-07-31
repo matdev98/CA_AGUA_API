@@ -18,5 +18,6 @@ namespace caMUNICIPIOSAPI.Application.Interfaces.Services
         Task<bool> CheckUsername(string username, string email);
         Task<bool> CheckUsername(string username, string email, int id);
         Task<Usuarios> CreateUser(Usuarios entity);
+        Task<bool> CambiarRol(int id, int rol, int idUser);
     }
 }

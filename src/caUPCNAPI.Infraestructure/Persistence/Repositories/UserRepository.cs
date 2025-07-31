@@ -133,5 +133,29 @@ namespace caMUNICIPIOSAPI.Infraestructure.Persistence.Repositories
                             .Where(u => (u.NombreUsuario == username || u.Email == email) && u.Id != id)
                             .AnyAsync();
         }
+
+        public async Task<UsuarioRolDTO> GetUsuarioRol(int id)
+        {
+            var usuarioRol = await _context.UsuariosRoles
+                .Where(ur => ur.IdUsuario == id)
+                .Select(ur => new UsuarioRolDTO
+                {
+                    IdUsuario = ur.IdUsuario,
+                    IdRol = ur.IdRol
+                })
+                .FirstOrDefaultAsync();
+
+            if (usuarioRol == null)
+            {
+                return new UsuarioRolDTO
+                {
+                    IdUsuario = id,
+                    IdRol = 0
+                };
+            } else
+            {
+                return usuarioRol;
+            }
+        }
     }
 }

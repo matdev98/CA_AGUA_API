@@ -6,6 +6,7 @@ using caMUNICIPIOSAPI.Domain.Entities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -14,12 +15,16 @@ namespace caMUNICIPIOSAPI.Application.Services
     public class UserService : IUserService
     {
         private readonly IUserRepository _userRepository;
+        private readonly IRolRepository _rolRepository;
         private readonly IMapper _mapper;
+        private readonly IBaseRepository<UsuarioRol> _baseRepository;
 
-        public UserService(IUserRepository userRepository, IMapper mapper)
+        public UserService(IUserRepository userRepository, IBaseRepository<UsuarioRol> baseRepository, IRolRepository rolRepository, IMapper mapper)
         {
             _userRepository = userRepository;
             _mapper = mapper;
+            _rolRepository = rolRepository;
+            _baseRepository = baseRepository;
         }
 
         public async Task<ResultadoDTO<UserDTO>> ObtenerUserPorIdAsync(int id)
@@ -73,6 +78,44 @@ namespace caMUNICIPIOSAPI.Application.Services
         {
             await _userRepository.AddAsync(entity);
             return entity;
+        }
+
+        public async Task<bool> CambiarRol(int id, int rol, int idUser)
+        {
+            if (rol == 0)
+            {
+                return false;
+            }
+            else
+            {
+                var usuarioRol = await _userRepository.GetUsuarioRol(id);
+                if (usuarioRol.IdRol == rol)
+                {
+                    return false;
+                }
+                else
+                {
+                    if (usuarioRol.IdRol == 0)
+                    {
+                        var entity = _mapper.Map<UsuarioRol>(new UsuarioRol { IdUsuario = id, IdRol = rol, OpCrea = idUser });
+                        var createdEntity = await _baseRepository.AddAsync(entity);
+                    }
+                    else
+                    {
+                        var deleted = await _rolRepository.DeleteUserRolAsync(id, usuarioRol.IdRol);
+                        if (!deleted)
+                        {
+                            return false;
+                        }
+                        else
+                        {
+                            var entity = _mapper.Map<UsuarioRol>(new UsuarioRol { IdUsuario = id, IdRol = rol, OpCrea = idUser });
+                            var createdEntity = await _baseRepository.AddAsync(entity);
+                        }
+                    }
+                    return true;
+                }
+            }
         }
     }
 }
