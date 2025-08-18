@@ -86,6 +86,7 @@ builder.Services.AddScoped<IPagoService, PagoService>();
 builder.Services.AddScoped<IInmuebleService, InmuebleService>();
 builder.Services.AddScoped<IDatosService, DatosService>();
 builder.Services.AddScoped<IFacturaService, FacturaService>();
+builder.Services.AddScoped<IWhatsappService, WhatsappService>();
 builder.Services.AddScoped<IContribuyenteService, ContribuyenteService>();
 builder.Services.AddScoped<IValorTipoImpuestoService, ValorTipoImpuestoService>();
 builder.Services.AddScoped<ICierreCajaService, CierreCajaService>();
@@ -100,6 +101,7 @@ builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
 
 // Dependency Injection
+builder.Services.AddHttpClient();
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
