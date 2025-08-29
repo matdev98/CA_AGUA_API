@@ -12,7 +12,7 @@ namespace caMUNICIPIOSAPI.Application.Interfaces.Services
     {
         Task<IEnumerable<Inmueble>> GetByMunicipioIdAsync(int idMunicipio);
         Task<IEnumerable<Inmueble>> GetByContribuyenteIdAsync(int contribuyenteId);
-        Task<bool> UpdateInmuebleEstadoIdAsync(int id);
+        Task<bool> UpdateInmuebleEstadoIdAsync(int id, int idUsuario);
         Task<IEnumerable<Inmueble>> GetLastInmueblesAsync(int idMunicipio);
         Task<IEnumerable<Inmueble>> SearchInmueblesAsync(string nombre);
     }

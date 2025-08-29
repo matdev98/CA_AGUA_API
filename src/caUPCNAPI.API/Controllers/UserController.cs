@@ -143,6 +143,13 @@ namespace caMUNICIPIOSAPI.API.Controllers
         {
             _logger.LogInformation("Creando un nuevo usuario");
 
+            var idUsuarioClaim = User.Claims.FirstOrDefault(c => c.Type == "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier");
+            if (idUsuarioClaim == null)
+            {
+                return Unauthorized(ResultadoDTO<IEnumerable<UserDTO>>.Fallido("El Token no contiene IdUsuario"));
+            }
+            var idUsuarioClaimB = int.Parse(idUsuarioClaim.Value);
+
             var entity = new Usuarios
             {
                 NombreUsuario = dto.NombreUsuario,
@@ -150,8 +157,11 @@ namespace caMUNICIPIOSAPI.API.Controllers
                 ClaveHash = _password.HashPassword(dto.ClaveHash),
                 NombreCompleto = dto.NombreCompleto,
                 Activo = dto.Activo ?? true,
-                IdMunicipio = dto.idMunicipio
+                IdMunicipio = dto.idMunicipio,
+                OpCrea = idUsuarioClaimB,
+                FecCrea = DateTime.Now
             };
+
             var existente = await _userService.CheckUsername(entity.NombreUsuario, entity.Email);
             if (existente)
             {
@@ -187,10 +197,20 @@ namespace caMUNICIPIOSAPI.API.Controllers
         {
             _logger.LogInformation($"Actualizando usuario con ID {id}");
 
+            var idUsuarioClaim = User.Claims.FirstOrDefault(c => c.Type == "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier");
+            if (idUsuarioClaim == null)
+            {
+                return Unauthorized(ResultadoDTO<IEnumerable<InicioCaja>>.Fallido("El Token no contiene IdUsuario"));
+            }
+            var idUsuarioClaimB = int.Parse(idUsuarioClaim.Value);
+
             var existingEntity = await _baseService.GetByIdAsync(id);
 
             if (existingEntity == null)
                 return NotFound(ResultadoDTO<string>.Fallido($"No se encontró el usuario con ID {id} para actualizar"));
+
+            existingEntity.OpMod = idUsuarioClaimB;
+            existingEntity.FecMod = DateTime.Now;
 
             _mapper.Map(dto, existingEntity); // SOLO mapea campos no nulos
 
@@ -217,18 +237,34 @@ namespace caMUNICIPIOSAPI.API.Controllers
             return Ok(resultadoDTO);
         }
 
-        [HttpDelete("{id}")]
+        [HttpPut("Anular/{id}")]
         [ProducesResponseType(typeof(ResultadoDTO<string>), StatusCodes.Status200OK)]
         public async Task<ActionResult<ResultadoDTO<string>>> Delete(int id)
         {
             _logger.LogInformation($"Eliminando usuario con ID {id}");
 
-            var deleted = await _baseService.DeleteAsync(id);
+            var idUsuarioClaim = User.Claims.FirstOrDefault(c => c.Type == "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier");
+            if (idUsuarioClaim == null)
+            {
+                return Unauthorized(ResultadoDTO<IEnumerable<InicioCaja>>.Fallido("El Token no contiene IdUsuario"));
+            }
+            var idUsuario = int.Parse(idUsuarioClaim.Value);
 
-            if (!deleted)
-                return NotFound(ResultadoDTO<string>.Fallido($"No se encontró el usuario con ID {id} para eliminar"));
+            var existingEntity = await _baseService.GetByIdAsync(id);
+            if (existingEntity == null)
+                return NotFound(ResultadoDTO<string>.Fallido($"No se encontró el usuario con ID {id} para actualizar"));
 
-            var resultadoDTO = ResultadoDTO<string>.Exitoso(null, "Usuario eliminado correctamente");
+            existingEntity.OpAnula = idUsuario;
+            existingEntity.FecAnula = DateTime.Now;
+            existingEntity.Anulado = true; // Marcar como anulado
+            existingEntity.Activo = false; // Desactivar el usuario
+
+            var updated = await _baseService.UpdateAsync(id, existingEntity);
+
+            if (!updated)
+                return NotFound(ResultadoDTO<string>.Fallido($"No se encontró el usuario con ID {id} para anular"));
+
+            var resultadoDTO = ResultadoDTO<string>.Exitoso(null, "Usuario anulado correctamente");
 
             return Ok(resultadoDTO);
         }

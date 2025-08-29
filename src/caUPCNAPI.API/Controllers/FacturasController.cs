@@ -34,16 +34,23 @@ namespace caMUNICIPIOSAPI.API.Controllers
             {
                 _logger.LogInformation($"Generando PDF de factura para idContribuyente: {idContribuyente}, Periodo: {periodo}");
 
+                var idUsuarioClaim = User.Claims.FirstOrDefault(c => c.Type == "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier");
+                if (idUsuarioClaim == null)
+                {
+                    return NotFound($"No se encontró un idUsuario vinculado al token");
+                }
+                var idUsuario = int.Parse(idUsuarioClaim.Value);
+
                 // Obtener el IdMunicipio desde el token
                 var idMunicipioClaim = User.Claims.FirstOrDefault(c => c.Type == "IdMunicipio");
                 if (idMunicipioClaim == null)
                 {
-                    return Unauthorized(ResultadoDTO<IEnumerable<Contribuyente>>.Fallido("El Token no contiene IdMunicipio"));
+                    return NotFound($"No se encontró un idMunicipio vinculado al token");
                 }
 
                 int idMunicipio = int.Parse(idMunicipioClaim.Value);
 
-                byte[] pdfBytes = await _facturaService.GenerarFacturaPorContribuyentePdf(idContribuyente, periodo, idMunicipio);
+                byte[] pdfBytes = await _facturaService.GenerarFacturaPorContribuyentePdf(idContribuyente, periodo, idMunicipio, idUsuario);
 
                 if (pdfBytes == null || pdfBytes.Length == 0)
                 {
@@ -77,11 +84,19 @@ namespace caMUNICIPIOSAPI.API.Controllers
 
             try
             {
+
+                var idUsuarioClaim = User.Claims.FirstOrDefault(c => c.Type == "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier");
+                if (idUsuarioClaim == null)
+                {
+                    return NotFound($"No se encontró un idUsuario vinculado al token");
+                }
+                var idUsuario = int.Parse(idUsuarioClaim.Value);
+
                 // Obtener el IdMunicipio desde el token
                 var idMunicipioClaim = User.Claims.FirstOrDefault(c => c.Type == "IdMunicipio");
                 if (idMunicipioClaim == null)
                 {
-                    return Unauthorized(ResultadoDTO<IEnumerable<Contribuyente>>.Fallido("El Token no contiene IdMunicipio"));
+                    return NotFound($"No se encontró un idMunicipio vinculado al token");
                 }
 
                 int idMunicipio = int.Parse(idMunicipioClaim.Value);
@@ -90,7 +105,7 @@ namespace caMUNICIPIOSAPI.API.Controllers
 
 
                 // Llama al servicio de recibos para generar y guardar el PDF
-                byte[] pdfBytes = await _facturaService.GenerarYGuardarReciboPDFAsync(IdPago, idContribuyente, idMunicipio);
+                byte[] pdfBytes = await _facturaService.GenerarYGuardarReciboPDFAsync(IdPago, idContribuyente, idMunicipio, idUsuario);
 
                 if (pdfBytes == null || pdfBytes.Length == 0)
                 {

@@ -59,7 +59,7 @@ namespace caMUNICIPIOSAPI.Infraestructure.Persistence.Repositories
             return resultado;
         }
 
-        public async Task<bool> UpdateEstadoIdAsync(int id)
+        public async Task<bool> UpdateEstadoIdAsync(int id, int idUsuario)
         {
             try
             {
@@ -71,6 +71,9 @@ namespace caMUNICIPIOSAPI.Infraestructure.Persistence.Repositories
                 }
 
                 inmueble.EstadoId = 2;
+                inmueble.Anulado = true;
+                inmueble.OpAnula = idUsuario;
+                inmueble.FecAnula = DateTime.Now;
 
                 _context.Inmuebles.Update(inmueble);
                 await _context.SaveChangesAsync();

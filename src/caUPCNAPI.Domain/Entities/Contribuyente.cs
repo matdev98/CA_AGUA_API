@@ -26,6 +26,13 @@ namespace caMUNICIPIOSAPI.Domain.Entities
         public DateTime? FechaAlta { get; set; }
         public int? EstadoId { get; set; }
         public int NumeroContribuyente { get; set; }
+        public int OpCrea { get; set; } = 0;
+        public DateTime FecCrea { get; set; } = DateTime.Now;
+        public bool Anulado { get; set; } = false;
+        public int OpAnula { get; set; } = 0;
+        public DateTime FecAnula { get; set; } = new DateTime(1900, 1, 1);
+        public int OpModifica { get; set; } = 0;
+        public DateTime FecModifica { get; set; } = new DateTime(1900, 1, 1);
 
     }
 }

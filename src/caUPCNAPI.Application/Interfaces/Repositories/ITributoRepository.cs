@@ -11,7 +11,7 @@ namespace caMUNICIPIOSAPI.Application.Interfaces.Repositories
     public interface ITributoRepository : IBaseRepository<Tributo>
     {
         Task<IEnumerable<TributoContribuyenteDTO>> GetByContribuyenteIdAsync(int contribuyenteId);
-        Task GenerarTributosDelMesAsync(int IdMunicipio);
+        Task GenerarTributosDelMesAsync(int IdMunicipio, int idUsuario);
         Task<List<TributoAgrupadoDTO>> ObtenerTributosAgrupados(int idContribuyente, string periodo);
         Task<List<TributoAgrupadoDTO>> ObtenerTributosAgrupadosSinPeriodo(int idContribuyente);
         Task<List<TributoContribuyenteDTO>> ObtenerDetalleTributoPorInmuebleAsync(int idContribuyente, int idInmueble, string periodo);

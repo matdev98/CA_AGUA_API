@@ -238,7 +238,7 @@ namespace caMUNICIPIOSAPI.Infraestructure.Persistence.Repositories
         public async Task<List<TributoAgrupadoDTO>> ObtenerTributosAgrupados(int idContribuyente, string periodo)
         {
             var contribuyente = await _context.Contribuyentes
-        .FirstOrDefaultAsync(c => c.Id == idContribuyente && c.EstadoId == 1);
+                .FirstOrDefaultAsync(c => c.Id == idContribuyente && c.EstadoId == 1);
 
             if (contribuyente == null)
                 return new List<TributoAgrupadoDTO>();
@@ -536,7 +536,7 @@ namespace caMUNICIPIOSAPI.Infraestructure.Persistence.Repositories
             return todosLosTributos;
         }
 
-        public async Task GenerarTributosDelMesAsync(int IdMunicipio)
+        public async Task GenerarTributosDelMesAsync(int IdMunicipio, int idUsuario)
         {
 
             using var transaction = await _context.Database.BeginTransactionAsync();
@@ -595,7 +595,9 @@ namespace caMUNICIPIOSAPI.Infraestructure.Persistence.Repositories
                                     FechaEmision = DateTime.Now,
                                     FechaVencimiento = new DateTime(DateTime.Now.Year, DateTime.Now.Month + 1, 10), // Vence el 10 del mes siguiente
                                     IdEstado = 1,      // Estado del tributo (ej. "Pendiente de pago")
-                                    IdEstadoTributo = 6 // Estado específico de tributo (ej. "Generado")
+                                    IdEstadoTributo = 6, // Estado específico de tributo (ej. "Generado")
+                                    OpCrea = idUsuario,
+                                    FecCrea = DateTime.Now
                                 };
                                 _context.Tributos.Add(tributoVar);
                             }

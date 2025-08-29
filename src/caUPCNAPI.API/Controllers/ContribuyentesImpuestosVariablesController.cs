@@ -95,18 +95,33 @@ namespace caMUNICIPIOSAPI.API.Controllers
             return Ok(resultadoDTO);
         }
 
-        [HttpDelete("{id}")]
+        [HttpPut("Anular/{id}")]
         [ProducesResponseType(typeof(ResultadoDTO<string>), StatusCodes.Status200OK)]
-        public async Task<ActionResult<ResultadoDTO<string>>> Delete(int id)
+        public async Task<ActionResult<ResultadoDTO<string>>> Anular(int id)
         {
-            _logger.LogInformation($"Eliminando Auditoria con ID {id}");
+            _logger.LogInformation($"Anulando Auditoria con ID {id}");
 
-            var deleted = await _baseService.DeleteAsync(id);
+            var idUsuarioClaim = User.Claims.FirstOrDefault(c => c.Type == "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier");
+            if (idUsuarioClaim == null)
+            {
+                return Unauthorized(ResultadoDTO<IEnumerable<string>>.Fallido("El Token no contiene IdUsuario"));
+            }
+            var idUsuario = int.Parse(idUsuarioClaim.Value);
 
-            if (!deleted)
-                return NotFound(ResultadoDTO<string>.Fallido($"No se encontró el impuesto con ID {id} para eliminar"));
+            var existingEntity = await _baseService.GetByIdAsync(id);
+            if (existingEntity == null)
+                return NotFound(ResultadoDTO<string>.Fallido($"No se encontró el impuesto con ID {id} para anular"));
 
-            var resultadoDTO = ResultadoDTO<string>.Exitoso(null, "Impuesto eliminada correctamente");
+            existingEntity.Anulado = true;
+            existingEntity.OpAnula = idUsuario;
+            existingEntity.FecAnula = DateTime.Now;
+
+            var annul = await _baseService.UpdateAsync(id, existingEntity);
+
+            if (!annul)
+                return NotFound(ResultadoDTO<string>.Fallido($"No se encontró el impuesto con ID {id} para anular"));
+
+            var resultadoDTO = ResultadoDTO<string>.Exitoso(null, "Impuesto eliminado correctamente");
 
             return Ok(resultadoDTO);
         }

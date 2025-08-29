@@ -41,7 +41,7 @@ namespace caMUNICIPIOSAPI.Application.Services
             _logger = logger;
         }
 
-        public async Task<byte[]> GenerarFacturaPorContribuyentePdf(int idContribuyente, string periodo, int idMunicipio)
+        public async Task<byte[]> GenerarFacturaPorContribuyentePdf(int idContribuyente, string periodo, int idMunicipio, int idUsuario)
         {
             try
             {
@@ -91,7 +91,8 @@ namespace caMUNICIPIOSAPI.Application.Services
                         MontoTotal = montoTotalFactura,
                         Estado = "Pendiente",
                         FechaCreacion = DateTime.Now,
-                        codigobarra = ""
+                        codigobarra = "",
+                        OpCrea = idUsuario
                     };
 
                     // Insertar la factura en la base de datos usando el repositorio
@@ -446,7 +447,7 @@ namespace caMUNICIPIOSAPI.Application.Services
 
         //GENERAR RECIBO DE PAGO
 
-        public async Task<byte[]> GenerarYGuardarReciboPDFAsync(int idPago, int idContribuyente, int idMunicipio)
+        public async Task<byte[]> GenerarYGuardarReciboPDFAsync(int idPago, int idContribuyente, int idMunicipio, int idUsuario)
         {
             _logger.LogInformation($"Iniciando generación y guardado de recibo PDF para Pago: {idPago}, Contribuyente: {idContribuyente}, Municipio: {idMunicipio}.");
 
@@ -475,7 +476,9 @@ namespace caMUNICIPIOSAPI.Application.Services
                     NombreContribuyente = $"{dataParaRecibo.Contribuyente?.Nombres} {dataParaRecibo.Contribuyente?.Apellidos}",
                     DocumentoContribuyente = dataParaRecibo.Contribuyente?.NumeroDocumento ?? "N/A",
                     DireccionInmueble = $"{dataParaRecibo.Inmueble?.Calle} {dataParaRecibo.Inmueble?.Numero}",
-                    IdMunicipio = idMunicipio
+                    IdMunicipio = idMunicipio,
+                    OpCrea = idUsuario,
+                    FecCrea = DateTime.Now
                 };
 
                 await _facturaRepo.AddReciboAsync(nuevoReciboDb);

@@ -26,7 +26,7 @@ namespace caMUNICIPIOSAPI.Infraestructure.Persistence.Repositories
                 .ToListAsync();
         }
 
-        public async Task<bool> UpdateEstadoIdAsync(int id)
+        public async Task<bool> UpdateEstadoIdAsync(int id, int idUsuario)
         {
             try
             {
@@ -41,6 +41,9 @@ namespace caMUNICIPIOSAPI.Infraestructure.Persistence.Repositories
 
                 // Actualizar solo la propiedad EstadoId
                 contribuyente.EstadoId = 2;
+                contribuyente.FecAnula = DateTime.Now;
+                contribuyente.OpAnula = idUsuario;
+                contribuyente.Anulado = true;
 
                 // Marcar la entidad como modificada y guardar los cambios
                 _context.Contribuyentes.Update(contribuyente); // O _context.Entry(contribuyente).State = EntityState.Modified;
@@ -50,7 +53,6 @@ namespace caMUNICIPIOSAPI.Infraestructure.Persistence.Repositories
             }
             catch (Exception ex)
             {
-
                 throw; // Relanza la excepción para que el servicio la capture
             }
         }
@@ -86,7 +88,7 @@ namespace caMUNICIPIOSAPI.Infraestructure.Persistence.Repositories
             // Se asume que un pago indica que el IdInmueble y Periodo correspondiente ha sido cubierto.
             // Esto es crucial para la lógica de "si Y SOLO SI no existe".
             var paidPeriodsByInmueble = await _context.Pagos
-                .Where(p =>p.IdMunicipio == idMunicipio && p.MontoPagado > 0 && p.FechaPago.HasValue && p.EstadoId == 1) // Asumo EstadoId=1 para pago exitoso
+                .Where(p => p.IdMunicipio == idMunicipio && p.MontoPagado > 0 && p.FechaPago.HasValue && p.EstadoId == 1) // Asumo EstadoId=1 para pago exitoso
                 .Select(p => new { p.Idinmueble, p.Periodo, IdContribuyente = p.IdContribuyente ?? 0 }) // Asegurarse de manejar IdContribuyente nulo si aplica
                 .Distinct()
                 .ToListAsync();
@@ -95,7 +97,7 @@ namespace caMUNICIPIOSAPI.Infraestructure.Persistence.Repositories
             // para su IdInmueble y Periodo.
             // Se considera "más de 3 meses" si hay al menos 4 periodos distintos adeudados.
             var unpaidOverdueTributos = await _context.Tributos
-                .Where(t =>t.IdMunicipio == idMunicipio && t.FechaVencimiento < DateTime.Today) 
+                .Where(t => t.IdMunicipio == idMunicipio && t.FechaVencimiento < DateTime.Today)
                 .ToListAsync(); // Trae todos los tributos vencidos y no pagados (según su estado)
 
             // Ahora, filtramos estos tributos para excluir aquellos que tienen un registro de pago
@@ -119,6 +121,43 @@ namespace caMUNICIPIOSAPI.Infraestructure.Persistence.Repositories
             return await _context.Contribuyentes
                 .Where(c => c.IdMunicipio == idMunicipio && contribuyentesDeudoresIds.Contains(c.Id))
                 .ToListAsync();
+        }
+
+        public async Task<bool> UpdateAsync(int idContribuyente, ContribuyenteDTO? dto, int idUsuario)
+        {
+            try
+            {
+                var contrib = await _context.Contribuyentes.FindAsync(idContribuyente);
+                if (contrib == null || dto == null)
+                {
+                    return false; // No se encontró el contribuyente o el DTO es nulo
+                }
+                // Actualizar solo las propiedades que no son nulas en el DTO
+                if (dto.IdLocalidad != null) contrib.IdLocalidad = dto.IdLocalidad;
+                if (dto.IdTipoDocumento != null) contrib.IdTipoDocumento = dto.IdTipoDocumento;
+                if (dto.NumeroDocumento != null) contrib.NumeroDocumento = dto.NumeroDocumento;
+                if (dto.CUIL != null) contrib.CUIL = dto.CUIL;
+                if (dto.Nombres != null) contrib.Nombres = dto.Nombres;
+                if (dto.Apellidos != null) contrib.Apellidos = dto.Apellidos;
+                if (dto.Calle != null) contrib.Calle = dto.Calle;
+                if (dto.Numero != null) contrib.Numero = dto.Numero;
+                if (dto.Orientacion != null) contrib.Orientacion = dto.Orientacion;
+                if (dto.Referencias != null) contrib.Referencias = dto.Referencias;
+                if (dto.Telefono != null) contrib.Telefono = dto.Telefono;
+                if (dto.Celular != null) contrib.Celular = dto.Celular;
+                if (dto.Email != null) contrib.Email = dto.Email;
+                contrib.FecModifica = DateTime.Now;
+                contrib.OpModifica = idUsuario;
+
+                _context.Contribuyentes.Update(contrib);
+                await _context.SaveChangesAsync();
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                throw new ApplicationException($"Error al actualizar el contribuyente: {ex.Message}", ex);
+            }
         }
     }
 }

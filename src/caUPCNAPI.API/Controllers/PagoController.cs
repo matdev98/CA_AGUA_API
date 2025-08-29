@@ -90,10 +90,19 @@ namespace caMUNICIPIOSAPI.API.Controllers
         {
             _logger.LogInformation("Creando un nuevo pago");
 
-            var entity = _mapper.Map<Pago>(dto);
+            var idUsuarioClaim = User.Claims.FirstOrDefault(c => c.Type == "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier");
+            if (idUsuarioClaim == null)
+            {
+                return Unauthorized(ResultadoDTO<IEnumerable<Pago>>.Fallido("El Token no contiene IdUsuario"));
+            }
+            var idUsuario = int.Parse(idUsuarioClaim.Value);
 
+            var entity = _mapper.Map<Pago>(dto);
+             
             entity.FechaPago = DateTime.Now;
             entity.EstadoId = 1;
+            entity.OpCrea = idUsuario; // Asignar el ID del usuario que crea el pago
+            entity.FecCrea = DateTime.Now; // Asignar la fecha de creación
 
             var createdEntity = await _baseService.AddAsync(entity);
             var resultadoMapeado = _mapper.Map<Pago>(createdEntity);
@@ -109,14 +118,25 @@ namespace caMUNICIPIOSAPI.API.Controllers
         {
             _logger.LogInformation($"Actualizando pago con ID {id}");
 
-            var existingEntity = await _baseService.GetByIdAsync(id);
+            var idUsuarioClaim = User.Claims.FirstOrDefault(c => c.Type == "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier");
+            if (idUsuarioClaim == null)
+            {
+                return Unauthorized(ResultadoDTO<IEnumerable<string>>.Fallido("El Token no contiene IdUsuario"));
+            }
+            var idUsuario = int.Parse(idUsuarioClaim.Value);
+
+            var existingEntity = await _pagoService.GetById(id);
 
             if (existingEntity == null)
                 return NotFound(ResultadoDTO<string>.Fallido($"No se encontró el pago con ID {id} para actualizar"));
 
             _mapper.Map(dto, existingEntity); // SOLO mapea campos no nulos
 
-            var updated = await _baseService.UpdateAsync(id, existingEntity);
+            existingEntity.OpMod = idUsuario; // Asignar el ID del usuario que modifica el pago
+            existingEntity.FecMod = DateTime.Now; // Asignar la fecha de modificación
+
+            //var updated = await _baseService.UpdateAsync(id, existingEntity);
+            var updated = await _pagoService.Update(id, existingEntity);
 
             if (!updated)
                 return NotFound(ResultadoDTO<string>.Fallido($"No se pudo actualizar el pago con ID {id}"));
@@ -134,9 +154,15 @@ namespace caMUNICIPIOSAPI.API.Controllers
 
             try
             {
+                var idUsuarioClaim = User.Claims.FirstOrDefault(c => c.Type == "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier");
+                if (idUsuarioClaim == null)
+                {
+                    return Unauthorized(ResultadoDTO<IEnumerable<bool>>.Fallido("El Token no contiene IdUsuario"));
+                }
+                var idUsuario = int.Parse(idUsuarioClaim.Value);
 
                 // Llama al método del servicio específico del inmueble
-                bool success = await _pagoService.UpdateInmuebleEstadoIdAsync(id);
+                bool success = await _pagoService.UpdateInmuebleEstadoIdAsync(id, idUsuario);
 
                 if (success)
                 {

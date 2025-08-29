@@ -17,5 +17,13 @@ namespace caMUNICIPIOSAPI.Domain.Entities
         public decimal ValorFijo { get; set; }
         public int EstadoId { get; set; }
         public bool CobroFijo { get; set; } = false;
+        public int OpCrea { get; set; } = 0;
+        public DateTime FecCrea { get; set; } = DateTime.Now;
+        public int OpMod { get; set; } = 0;
+        public DateTime FecMod { get; set; } = new DateTime(1900, 1, 1);
+        public bool Anulado { get; set; } = false;
+        public int OpAnula { get; set; } = 0;
+        public DateTime FecAnula { get; set; } = new DateTime(1900, 1, 1);
+
     }
 }

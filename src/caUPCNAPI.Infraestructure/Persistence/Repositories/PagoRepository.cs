@@ -19,7 +19,7 @@ namespace caMUNICIPIOSAPI.Infraestructure.Persistence.Repositories
             _context = context;
         }
 
-        public async Task<bool> UpdateEstadoIdAsync(int id)
+        public async Task<bool> UpdateEstadoIdAsync(int id, int idUsuario)
         {
             try
             {
@@ -34,6 +34,9 @@ namespace caMUNICIPIOSAPI.Infraestructure.Persistence.Repositories
 
                 // Actualizar solo la propiedad EstadoId
                 pagos.EstadoId = 2;
+                pagos.OpAnula = idUsuario;
+                pagos.Anulado = true;
+                pagos.FecAnula = DateTime.Now;
 
                 // Marcar la entidad como modificada y guardar los cambios
                 _context.Pagos.Update(pagos);
@@ -164,6 +167,7 @@ namespace caMUNICIPIOSAPI.Infraestructure.Persistence.Repositories
                 {
                     IdUsuario = idUsuario,
                     IdMunicipio = idMunicipio,
+                    EstadoId = 1,
                     Monto = sumaMontosPagados,
                     Fecha = DateTime.Now // Fecha y hora actual por defecto
                 };
@@ -174,6 +178,8 @@ namespace caMUNICIPIOSAPI.Infraestructure.Persistence.Repositories
                 foreach (var pago in pagosPendientesDeCierre)
                 {
                     pago.IdCierre = nuevoCierre.Id; // Asignamos el ID del nuevo cierre a cada pago
+                    pago.OpMod = idUsuario;
+                    pago.FecMod = DateTime.Now;
                 }
 
                 await _context.SaveChangesAsync(); // Guarda los cambios en los pagos
@@ -190,5 +196,79 @@ namespace caMUNICIPIOSAPI.Infraestructure.Persistence.Repositories
             }
         }
 
+        public async Task<bool> AnularCierreCajaAsync(int idCierre, int idUsuario)
+        {
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                var cierreExistente = await _context.CierreCaja
+                    .FirstOrDefaultAsync(c => c.Id == idCierre && c.EstadoId == 1);
+
+                if (cierreExistente == null)
+                {
+                    await transaction.CommitAsync();
+                    return false; // No se encontró el cierre de caja para anular
+                }
+
+                var pagosCierre = await _context.Pagos
+                    .Where(p => p.IdCierre == idCierre)
+                    .ToListAsync();
+
+                if (!pagosCierre.Any())
+                {
+                    await transaction.CommitAsync();
+                    return false; // No hay pagos asociados al cierre, no se puede anular
+                }
+
+                cierreExistente.Anulado = true; // Marca el cierre como anulado
+                cierreExistente.EstadoId = 2; // Cambia el estado a anulado
+                cierreExistente.OpAnula = idUsuario;
+                cierreExistente.FecAnula = DateTime.Now;
+                _context.CierreCaja.Update(cierreExistente); // Actualiza el cierre de caja
+
+                foreach (var x in pagosCierre)
+                {
+                    x.IdCierre = 0; // Desvincula los pagos del cierre anulado
+                    x.OpMod = idUsuario;
+                    x.FecMod = DateTime.Now;
+                    _context.Pagos.Update(x); // Actualiza cada pago
+                }
+                await _context.SaveChangesAsync(); // Guarda todos los cambios
+                await transaction.CommitAsync(); // Confirma la transacción
+                return true; // Anulación exitosa
+            }
+            catch 
+            {
+                await transaction.RollbackAsync(); // Revierte la transacción en caso de error
+                throw new ApplicationException("Error al anular el cierre de caja."); // Lanza una excepción de aplicación
+            }
+        }
+
+        public async Task<bool> Update(int id, Pago entidad)
+        {
+            try
+            {
+                var pago = await _context.Pagos.FindAsync(id);
+                if (pago == null)
+                {
+                    return false; // No se encontró el pago
+                }
+                pago = entidad; // Actualiza todas las propiedades del pago
+
+                _context.Pagos.Update(pago);
+                await _context.SaveChangesAsync();
+
+                return true;
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        public async Task<Pago> GetById(int id)
+        {
+            return await _context.Pagos.FirstOrDefaultAsync(p => p.IdPago == id);
+        }
     }
 }

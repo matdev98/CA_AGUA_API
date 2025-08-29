@@ -21,11 +21,11 @@ namespace caMUNICIPIOSAPI.Application.Services
             _repository = repository;
         }
 
-        public async Task<bool> UpdateInmuebleEstadoIdAsync(int id)
+        public async Task<bool> UpdateInmuebleEstadoIdAsync(int id, int idUsuario)
         {
             try
             {
-                bool success = await _repository.UpdateEstadoIdAsync(id);
+                bool success = await _repository.UpdateEstadoIdAsync(id, idUsuario);
                 return success;
             }
             catch (Exception ex)
@@ -65,6 +65,38 @@ namespace caMUNICIPIOSAPI.Application.Services
             }
         }
 
+        public async Task<bool> AnularCierreCajaAsync(int idCierrre, int idUsuario)
+        {
+            try
+            {
+                var anularCierre = await _repository.AnularCierreCajaAsync(idCierrre, idUsuario);
+
+                return anularCierre;
+            }
+            catch
+            {
+                throw new ApplicationException("Ocurrió un error al anular el cierre de caja.");
+            }
+        }
+
+        public async Task<bool> Update(int id, Pago entidad)
+        {
+            try
+            {
+                var modificado = await _repository.Update(id, entidad);
+
+                return modificado;
+            }
+            catch 
+            { 
+                throw new ApplicationException("Ocurrió un error al modificar el pago.");
+            }
+        }
+
+        public async Task<Pago> GetById(int id)
+        {
+            return await _repository.GetById(id);
+        }
     }
 
 }

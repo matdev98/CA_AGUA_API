@@ -240,15 +240,24 @@ namespace caMUNICIPIOSAPI.API.Controllers
 
             int idMunicipio = int.Parse(idMunicipioClaim.Value);
 
+            var idUsuarioClaim = User.Claims.FirstOrDefault(c => c.Type == "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier");
+            if (idUsuarioClaim == null)
+            {
+                return Unauthorized(ResultadoDTO<IEnumerable<Contribuyente>>.Fallido("El Token no contiene IdUsuario"));
+            }
+            var idUsuario = int.Parse(idUsuarioClaim.Value);
+
             var entity = _mapper.Map<Contribuyente>(dto);
 
             entity.IdMunicipio = idMunicipio;
+            entity.OpCrea = idUsuario;
+            entity.FecCrea = DateTime.Now;
 
             var createdEntity = await _baseService.AddAsync(entity);
             var resultadoMapeado = _mapper.Map<Contribuyente>(createdEntity);
             var listaImpuestos = await _tributoService.GetFijos(idMunicipio);
 
-            if (dto.DomicilioInmueble)
+            if (dto.DomicilioInmueble ?? false)
             {
                 var entityInmueble = new Inmueble
                 {
@@ -262,7 +271,9 @@ namespace caMUNICIPIOSAPI.API.Controllers
                     EvaluoFiscal = 0,
                     EstadoId = 1,
                     AreaTotal = 0,
-                    IdMunicipio = idMunicipio
+                    IdMunicipio = idMunicipio,
+                    OpCrea = idUsuario,
+                    FecCrea = DateTime.Now
                 };
 
                 var createdEntityInmueble = await _inmuebleService.AddAsync(entityInmueble);
@@ -302,9 +313,14 @@ namespace caMUNICIPIOSAPI.API.Controllers
             if (existingEntity == null)
                 return NotFound(ResultadoDTO<string>.Fallido($"No se encontró el Contribuyente con ID {id} para actualizar"));
 
-            _mapper.Map(dto, existingEntity); // SOLO mapea campos no nulos
+            var idUsuarioClaim = User.Claims.FirstOrDefault(c => c.Type == "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier");
+            if (idUsuarioClaim == null)
+            {
+                return Unauthorized(ResultadoDTO<IEnumerable<string>>.Fallido("El Token no contiene IdUsuario"));
+            }
+            var idUsuario = int.Parse(idUsuarioClaim.Value);
 
-            var updated = await _baseService.UpdateAsync(id, existingEntity);
+            var updated = await _contribuyenteService.UpdateAsync(id, dto, idUsuario);
 
             if (!updated)
                 return NotFound(ResultadoDTO<string>.Fallido($"No se pudo actualizar el Contribuyente con ID {id}"));
@@ -322,8 +338,15 @@ namespace caMUNICIPIOSAPI.API.Controllers
 
             try
             {
+                var idUsuarioClaim = User.Claims.FirstOrDefault(c => c.Type == "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier");
+                if (idUsuarioClaim == null)
+                {
+                    return Unauthorized(ResultadoDTO<IEnumerable<bool>>.Fallido("El Token no contiene IdUsuario"));
+                }
+                var idUsuario = int.Parse(idUsuarioClaim.Value);
+
                 // Llama al método del servicio específico del contribuyente
-                bool success = await _contribuyenteService.UpdateContribuyenteEstadoIdAsync(id);
+                bool success = await _contribuyenteService.UpdateContribuyenteEstadoIdAsync(id, idUsuario);
 
                 if (success)
                 {

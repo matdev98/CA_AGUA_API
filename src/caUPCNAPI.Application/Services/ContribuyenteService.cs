@@ -26,11 +26,11 @@ namespace caMUNICIPIOSAPI.Application.Services
             return await _repository.GetByMunicipioIdAsync(idMunicipio);
         }
 
-        public async Task<bool> UpdateContribuyenteEstadoIdAsync(int id)
+        public async Task<bool> UpdateContribuyenteEstadoIdAsync(int id, int idUsuario)
         {
             try
             {
-                bool success = await _repository.UpdateEstadoIdAsync(id);
+                bool success = await _repository.UpdateEstadoIdAsync(id, idUsuario);
                 return success;
             }
             catch (Exception ex)
@@ -129,7 +129,18 @@ namespace caMUNICIPIOSAPI.Application.Services
             if (contribuyente.Email != null) contribuyente.Email = contribuyente.Email.Trim();
         }
 
-
+        public async Task<bool> UpdateAsync(int idContribuyente, ContribuyenteDTO? dto, int idUsuario)
+        {
+            try
+            {
+                var updated = await _repository.UpdateAsync(idContribuyente, dto, idUsuario);
+                return updated;
+            }
+            catch
+            {
+                throw new ApplicationException("Error al actualizar los datos del contribuyente.");
+            }
+        }
 
     }
 

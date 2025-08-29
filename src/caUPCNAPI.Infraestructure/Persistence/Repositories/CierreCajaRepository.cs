@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -39,7 +40,7 @@ namespace caMUNICIPIOSAPI.Infraestructure.Persistence.Repositories
                 }
 
                 var sumaMontosPagados = pagosPendientesDeCierre.Sum(p => p.MontoPagado ?? 0M); // Suma los montos, manejando nulos
-
+                
                 // 2. Agregar un registro nuevo en CierreCaja y que en el campo Monto se guarde la suma anterior.
                 var nuevoCierre = new CierreCaja
                 {

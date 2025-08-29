@@ -65,9 +65,9 @@ namespace caMUNICIPIOSAPI.Application.Services
         }
 
 
-        public async Task GenerarTributosDelMesAsync(int IdMunicipio)
+        public async Task GenerarTributosDelMesAsync(int IdMunicipio, int idUsuario)
         {
-            await _repository.GenerarTributosDelMesAsync(IdMunicipio);
+            await _repository.GenerarTributosDelMesAsync(IdMunicipio, idUsuario);
         }
 
         public async Task<List<TributoContribuyenteDTO>> ObtenerTributosPorPeriodoAsync(string periodo, int idMunicipio)

@@ -53,12 +53,12 @@ namespace caMUNICIPIOSAPI.Application.Services
             return await _repository.GetByContribuyenteIdAsync(contribuyenteId);
         }
 
-        public async Task<bool> UpdateInmuebleEstadoIdAsync(int id)
+        public async Task<bool> UpdateInmuebleEstadoIdAsync(int id, int idUsuario)
         {
             try
             {
                 // Llama directamente al método del repositorio específico
-                bool success = await _repository.UpdateEstadoIdAsync(id);
+                bool success = await _repository.UpdateEstadoIdAsync(id, idUsuario);
                 return success;
             }
             catch (Exception ex)

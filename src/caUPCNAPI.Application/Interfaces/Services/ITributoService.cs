@@ -12,11 +12,10 @@ namespace caMUNICIPIOSAPI.Application.Interfaces.Services
     {
         Task<ResultadoDTO<IEnumerable<TributoContribuyenteDTO>>> GetByContribuyenteIdAsync(int contribuyenteId);
 
-        Task GenerarTributosDelMesAsync(int IdMunicipio);
+        Task GenerarTributosDelMesAsync(int IdMunicipio, int idUsuario);
 
         Task<List<TributoAgrupadoDTO>> ObtenerTributosAgrupadosAsync(int idContribuyente, string periodo);
         Task<List<TributoAgrupadoDTO>> ObtenerTributosAgrupadosSinPeriodoAsync(int idContribuyente);
-
         Task<List<TributoContribuyenteDTO>> ObtenerDetalleTributoPorInmuebleAsync(int idContribuyente, int idInmueble, string periodo);
 
         Task<List<TributoContribuyenteDTO>> ObtenerTributosPorPeriodoAsync(string periodo, int idMunicipio);

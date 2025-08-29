@@ -28,10 +28,23 @@ namespace caMUNICIPIOSAPI.Domain.Entities
 
         public DateTime? FechaPago { get; set; }
 
-        public DateTime FechaCreacion { get; set; }
-
         public int IdMunicipio { get; set; }
+
         public string codigobarra { get; set; }
+
+        public int OpCrea { get; set; } = 0;
+
+        public DateTime FechaCreacion { get; set; } = DateTime.Now;
+
+        public bool Anulado { get; set; } = false;
+
+        public int OpAnula { get; set; } = 0;
+
+        public DateTime FecAnula { get; set; } = new DateTime(1900, 1, 1);
+
+        public int OpMod { get; set; } = 0;
+
+        public DateTime FecMod { get; set; } = new DateTime(1900, 1, 1);
 
     }
 }

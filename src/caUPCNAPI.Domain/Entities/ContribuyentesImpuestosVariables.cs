@@ -14,5 +14,8 @@ namespace caMUNICIPIOSAPI.Domain.Entities
         public int IdInmueble { get; set; }
         public DateTime PeriodoDesde { get; set; }
         public DateTime PeriodoHasta { get; set; }
+        public bool Anulado { get; set; } = false;
+        public int OpAnula { get; set; } = 0;
+        public DateTime FecAnula { get; set; } = new DateTime(1900, 1, 1);
     }
 }

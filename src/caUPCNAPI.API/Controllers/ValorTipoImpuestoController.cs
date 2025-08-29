@@ -81,6 +81,17 @@ namespace caMUNICIPIOSAPI.API.Controllers
             _logger.LogInformation("Creando un nuevo valor tipo impuesto");
 
             var entity = _mapper.Map<ValorTipoImpuesto>(dto);
+
+            var idUsuarioClaim = User.Claims.FirstOrDefault(c => c.Type == "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier");
+            if (idUsuarioClaim == null)
+            {
+                return Unauthorized(ResultadoDTO<IEnumerable<ValorTipoImpuesto>>.Fallido("El Token no contiene IdUsuario"));
+            }
+            var idUsuario = int.Parse(idUsuarioClaim.Value);
+
+            entity.OpCrea = idUsuario;
+            entity.FecCrea = DateTime.Now;
+
             var createdEntity = await _baseService.AddAsync(entity);
             var resultadoMapeado = _mapper.Map<ValorTipoImpuesto>(createdEntity);
 
@@ -100,7 +111,17 @@ namespace caMUNICIPIOSAPI.API.Controllers
             if (existingEntity == null)
                 return NotFound(ResultadoDTO<string>.Fallido($"No se encontró el valor tipo impuesto con ID {id} para actualizar"));
 
+            var idUsuarioClaim = User.Claims.FirstOrDefault(c => c.Type == "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier");
+            if (idUsuarioClaim == null)
+            {
+                return Unauthorized(ResultadoDTO<IEnumerable<string>>.Fallido("El Token no contiene IdUsuario"));
+            }
+            var idUsuario = int.Parse(idUsuarioClaim.Value);
+
             _mapper.Map(dto, existingEntity);
+
+            existingEntity.OpMod = idUsuario;
+            existingEntity.FecMod = DateTime.Now;
 
             var updated = await _baseService.UpdateAsync(id, existingEntity);
 
@@ -112,21 +133,53 @@ namespace caMUNICIPIOSAPI.API.Controllers
             return Ok(resultadoDTO);
         }
 
-        [HttpDelete("{id}")]
+        [HttpPut("anular/{id}")]
         [ProducesResponseType(typeof(ResultadoDTO<string>), StatusCodes.Status200OK)]
-        public async Task<ActionResult<ResultadoDTO<string>>> Delete(int id)
+        public async Task<ActionResult<ResultadoDTO<string>>> Anular(int id)
         {
-            _logger.LogInformation($"Eliminando valor tipo impuesto con ID {id}");
+            _logger.LogInformation($"Anulando valor tipo impuesto con ID {id}");
 
-            var deleted = await _baseService.DeleteAsync(id);
+            var existingEntity = await _baseService.GetByIdAsync(id);
 
-            if (!deleted)
-                return NotFound(ResultadoDTO<string>.Fallido($"No se encontró el valor tipo impuesto con ID {id} para eliminar"));
+            if (existingEntity == null)
+                return NotFound(ResultadoDTO<string>.Fallido($"No se encontró el valor tipo impuesto con ID {id} para anular"));
 
-            var resultadoDTO = ResultadoDTO<string>.Exitoso(null, "Valor tipo impuesto eliminado correctamente");
+            var idUsuarioClaim = User.Claims.FirstOrDefault(c => c.Type == "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier");
+            if (idUsuarioClaim == null)
+            {
+                return Unauthorized(ResultadoDTO<IEnumerable<string>>.Fallido("El Token no contiene IdUsuario"));
+            }
+            var idUsuario = int.Parse(idUsuarioClaim.Value);
+            
+            existingEntity.Anulado = true;
+            existingEntity.OpAnula = idUsuario;
+            existingEntity.FecAnula = DateTime.Now;
+
+            var updated = await _baseService.UpdateAsync(id, existingEntity);
+
+            if (!updated)
+                return NotFound(ResultadoDTO<string>.Fallido($"No se pudo anular el valor tipo impuesto con ID {id}"));
+
+            var resultadoDTO = ResultadoDTO<string>.Exitoso(null, "Valor tipo impuesto anulado correctamente");
 
             return Ok(resultadoDTO);
         }
+
+        //[HttpDelete("{id}")]
+        //[ProducesResponseType(typeof(ResultadoDTO<string>), StatusCodes.Status200OK)]
+        //public async Task<ActionResult<ResultadoDTO<string>>> Delete(int id)
+        //{
+        //    _logger.LogInformation($"Eliminando valor tipo impuesto con ID {id}");
+
+        //    var deleted = await _baseService.DeleteAsync(id);
+
+        //    if (!deleted)
+        //        return NotFound(ResultadoDTO<string>.Fallido($"No se encontró el valor tipo impuesto con ID {id} para eliminar"));
+
+        //    var resultadoDTO = ResultadoDTO<string>.Exitoso(null, "Valor tipo impuesto eliminado correctamente");
+
+        //    return Ok(resultadoDTO);
+        //}
     }
 
 }

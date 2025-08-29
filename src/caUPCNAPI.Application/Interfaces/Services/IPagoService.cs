@@ -10,11 +10,14 @@ namespace caMUNICIPIOSAPI.Application.Interfaces.Services
 {
     public interface IPagoService : IBaseService<Pago>
     {
-        Task<bool> UpdateInmuebleEstadoIdAsync(int id);
+        Task<bool> UpdateInmuebleEstadoIdAsync(int id, int idUsuario);
         Task<List<Pago>> ObtenerPagosPorInmuebleAsync(int idContribuyente, int idInmueble, string periodo);
         Task<bool> DeleteAsync(int id);
         Task<List<PagoDetalleDTO>> GetPagosDetallePorFechasYMunicipioAsync(DateTime fechaInicio, DateTime fechaFin, int idMunicipio);
         Task<CierreCaja> ProcesarCierreDeCajaAsync(int idUsuario, int idMunicipio);
+        Task<bool> AnularCierreCajaAsync(int idCierrre, int idUsuario);
+        Task<bool> Update(int id, Pago entidad);
+        Task<Pago> GetById(int id);
     }
 
 }

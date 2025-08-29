@@ -101,7 +101,7 @@ namespace caMUNICIPIOSAPI.API.Controllers
             var idMunicipioClaim = User.Claims.FirstOrDefault(c => c.Type == "IdMunicipio");
             if (idMunicipioClaim == null)
             {
-                return Unauthorized(ResultadoDTO<IEnumerable<Contribuyente>>.Fallido("El Token no contiene IdMunicipio"));
+                return Unauthorized(ResultadoDTO<IEnumerable<TributoContribuyenteDTO>>.Fallido("El Token no contiene IdMunicipio"));
             }
 
             int idMunicipio = int.Parse(idMunicipioClaim.Value);
@@ -209,7 +209,14 @@ namespace caMUNICIPIOSAPI.API.Controllers
         {
             try
             {
-                await _tributoService.GenerarTributosDelMesAsync(IdMunicipio);
+                var idUsuarioClaim = User.Claims.FirstOrDefault(c => c.Type == "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier");
+                if (idUsuarioClaim == null)
+                {
+                    return Unauthorized(ResultadoDTO<IEnumerable<string>>.Fallido("El Token no contiene IdUsuario"));
+                }
+                var idUsuario = int.Parse(idUsuarioClaim.Value);
+
+                await _tributoService.GenerarTributosDelMesAsync(IdMunicipio, idUsuario);
 
                 var resultadoDTO = ResultadoDTO<string>.Exitoso(
                           datos: "Tributos generados correctamente",
@@ -255,7 +262,17 @@ namespace caMUNICIPIOSAPI.API.Controllers
             if (existingEntity == null)
                 return NotFound(ResultadoDTO<string>.Fallido($"No se encontró el tributo con ID {id} para actualizar"));
 
+            var idUsuarioClaim = User.Claims.FirstOrDefault(c => c.Type == "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier");
+            if (idUsuarioClaim == null)
+            {
+                return Unauthorized(ResultadoDTO<IEnumerable<string>>.Fallido("El Token no contiene IdUsuario"));
+            }
+            var idUsuario = int.Parse(idUsuarioClaim.Value);
+
             _mapper.Map(dto, existingEntity);
+
+            existingEntity.OpMod = idUsuario;
+            existingEntity.FecMod = DateTime.Now;
 
             var updated = await _baseService.UpdateAsync(id, existingEntity);
 
@@ -267,21 +284,53 @@ namespace caMUNICIPIOSAPI.API.Controllers
             return Ok(resultadoDTO);
         }
 
-        [HttpDelete("{id}")]
+        [HttpPut("anular/{id}")]
         [ProducesResponseType(typeof(ResultadoDTO<string>), StatusCodes.Status200OK)]
-        public async Task<ActionResult<ResultadoDTO<string>>> Delete(int id)
+        public async Task<ActionResult<ResultadoDTO<string>>> Anular(int id)
         {
-            _logger.LogInformation($"Eliminando tributo con ID {id}");
+            _logger.LogInformation($"Anulando tributo con ID {id}");
 
-            var deleted = await _baseService.DeleteAsync(id);
+            var existingEntity = await _baseService.GetByIdAsync(id);
 
-            if (!deleted)
-                return NotFound(ResultadoDTO<string>.Fallido($"No se encontró el tributo con ID {id} para eliminar"));
+            if (existingEntity == null)
+                return NotFound(ResultadoDTO<string>.Fallido($"No se encontró el tributo con ID {id} para anular"));
 
-            var resultadoDTO = ResultadoDTO<string>.Exitoso(null, "Tributo eliminado correctamente");
+            var idUsuarioClaim = User.Claims.FirstOrDefault(c => c.Type == "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier");
+            if (idUsuarioClaim == null)
+            {
+                return Unauthorized(ResultadoDTO<IEnumerable<string>>.Fallido("El Token no contiene IdUsuario"));
+            }
+            var idUsuario = int.Parse(idUsuarioClaim.Value);
+
+            existingEntity.Anulado = true;
+            existingEntity.OpAnula = idUsuario;
+            existingEntity.FecAnula = DateTime.Now;
+
+            var updated = await _baseService.UpdateAsync(id, existingEntity);
+
+            if (!updated)
+                return NotFound(ResultadoDTO<string>.Fallido($"No se pudo anular el tributo con ID {id}"));
+
+            var resultadoDTO = ResultadoDTO<string>.Exitoso(null, "Tributo anulado correctamente");
 
             return Ok(resultadoDTO);
         }
+
+        //[HttpDelete("{id}")]
+        //[ProducesResponseType(typeof(ResultadoDTO<string>), StatusCodes.Status200OK)]
+        //public async Task<ActionResult<ResultadoDTO<string>>> Delete(int id)
+        //{
+        //    _logger.LogInformation($"Eliminando tributo con ID {id}");
+
+        //    var deleted = await _baseService.DeleteAsync(id);
+
+        //    if (!deleted)
+        //        return NotFound(ResultadoDTO<string>.Fallido($"No se encontró el tributo con ID {id} para eliminar"));
+
+        //    var resultadoDTO = ResultadoDTO<string>.Exitoso(null, "Tributo eliminado correctamente");
+
+        //    return Ok(resultadoDTO);
+        //}
     }
 
 }

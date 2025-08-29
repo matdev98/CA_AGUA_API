@@ -192,9 +192,19 @@ namespace caMUNICIPIOSAPI.API.Controllers
 
             int idMunicipio = int.Parse(idMunicipioClaim.Value);
 
+
+            var idUsuarioClaim = User.Claims.FirstOrDefault(c => c.Type == "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier");
+            if (idUsuarioClaim == null)
+            {
+                return Unauthorized(ResultadoDTO<IEnumerable<Inmueble>>.Fallido("El Token no contiene IdUsuario"));
+            }
+            var idUsuario = int.Parse(idUsuarioClaim.Value);
+
             var entity = _mapper.Map<Inmueble>(dto);
 
             entity.IdMunicipio = idMunicipio;
+            entity.OpCrea = idUsuario;
+            entity.FecCrea = DateTime.Now;
 
             var createdEntity = await _baseService.AddAsync(entity);
             var resultadoMapeado = _mapper.Map<Inmueble>(createdEntity);
@@ -237,6 +247,16 @@ namespace caMUNICIPIOSAPI.API.Controllers
 
             _mapper.Map(dto, existingEntity); // SOLO mapea campos no nulos
 
+            var idUsuarioClaim = User.Claims.FirstOrDefault(c => c.Type == "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier");
+            if (idUsuarioClaim == null)
+            {
+                return Unauthorized(ResultadoDTO<IEnumerable<string>>.Fallido("El Token no contiene IdUsuario"));
+            }
+            var idUsuario = int.Parse(idUsuarioClaim.Value);
+
+            existingEntity.OpMod = idUsuario;
+            existingEntity.FecMod = DateTime.Now;
+
             var updated = await _baseService.UpdateAsync(id, existingEntity);
 
             if (!updated)
@@ -255,8 +275,14 @@ namespace caMUNICIPIOSAPI.API.Controllers
 
             try
             {
+                var idUsuarioClaim = User.Claims.FirstOrDefault(c => c.Type == "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier");
+                if (idUsuarioClaim == null)
+                {
+                    return Unauthorized(ResultadoDTO<IEnumerable<bool>>.Fallido("El Token no contiene IdUsuario"));
+                }
+                var idUsuario = int.Parse(idUsuarioClaim.Value);
 
-                bool success = await _inmuebleService.UpdateInmuebleEstadoIdAsync(id);
+                bool success = await _inmuebleService.UpdateInmuebleEstadoIdAsync(id, idUsuario);
 
                 if (success)
                 {

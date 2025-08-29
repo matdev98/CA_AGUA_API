@@ -6,6 +6,7 @@ using caMUNICIPIOSAPI.Domain.Entities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Org.BouncyCastle.Asn1.X509;
 
 namespace caMUNICIPIOSAPI.API.Controllers
 {
@@ -63,7 +64,18 @@ namespace caMUNICIPIOSAPI.API.Controllers
         {
             _logger.LogInformation("Creando un nuevo Plan de pago");
 
+            var idUsuarioClaim = User.Claims.FirstOrDefault(c => c.Type == "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier");
+            if (idUsuarioClaim == null)
+            {
+                return Unauthorized(ResultadoDTO<IEnumerable<PlanPago>>.Fallido("El Token no contiene IdUsuario"));
+            }
+            var idUsuario = int.Parse(idUsuarioClaim.Value);
+
             var entity = _mapper.Map<PlanPago>(dto);
+
+            entity.OpCrea = idUsuario;
+            entity.FecCrea = DateTime.Now;
+
             var createdEntity = await _baseService.AddAsync(entity);
             var resultadoMapeado = _mapper.Map<PlanPago>(createdEntity);
 
@@ -78,12 +90,22 @@ namespace caMUNICIPIOSAPI.API.Controllers
         {
             _logger.LogInformation($"Actualizando Plan de pago con ID {id}");
 
+            var idUsuarioClaim = User.Claims.FirstOrDefault(c => c.Type == "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier");
+            if (idUsuarioClaim == null)
+            {
+                return Unauthorized(ResultadoDTO<IEnumerable<string>>.Fallido("El Token no contiene IdUsuario"));
+            }
+            var idUsuario = int.Parse(idUsuarioClaim.Value);
+
             var existingEntity = await _baseService.GetByIdAsync(id);
 
             if (existingEntity == null)
                 return NotFound(ResultadoDTO<string>.Fallido($"No se encontró el Plan de pago con ID {id} para actualizar"));
 
             _mapper.Map(dto, existingEntity); // SOLO mapea campos no nulos
+
+            existingEntity.OpMod = idUsuario;
+            existingEntity.FecMod = DateTime.Now;
 
             var updated = await _baseService.UpdateAsync(id, existingEntity);
 
@@ -95,21 +117,50 @@ namespace caMUNICIPIOSAPI.API.Controllers
             return Ok(resultadoDTO);
         }
 
-        [HttpDelete("{id}")]
+        [HttpPut("anular/{id}")]
         [ProducesResponseType(typeof(ResultadoDTO<string>), StatusCodes.Status200OK)]
-        public async Task<ActionResult<ResultadoDTO<string>>> Delete(int id)
+        public async Task<ActionResult<ResultadoDTO<string>>> Anular(int id)
         {
-            _logger.LogInformation($"Eliminando Plan de pago con ID {id}");
+            _logger.LogInformation($"Anulando Plan de pago con ID {id}");
 
-            var deleted = await _baseService.DeleteAsync(id);
+            var idUsuarioClaim = User.Claims.FirstOrDefault(c => c.Type == "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier");
+            if (idUsuarioClaim == null)
+            {
+                return Unauthorized(ResultadoDTO<IEnumerable<string>>.Fallido("El Token no contiene IdUsuario"));
+            }
+            var idUsuario = int.Parse(idUsuarioClaim.Value);
 
-            if (!deleted)
-                return NotFound(ResultadoDTO<string>.Fallido($"No se encontró el Plan de pago con ID {id} para eliminar"));
+            var existingEntity = await _baseService.GetByIdAsync(id);
+            if (existingEntity == null)
+                return NotFound(ResultadoDTO<string>.Fallido($"No se encontró el Plan de pago con ID {id} para anular"));
 
-            var resultadoDTO = ResultadoDTO<string>.Exitoso(null, "Plan de pago eliminado correctamente");
+            existingEntity.Anulado = true;
+            existingEntity.OpAnula = idUsuario;
+            existingEntity.FecAnula = DateTime.Now;
 
+            var updated = await _baseService.UpdateAsync(id, existingEntity);
+            if (!updated)
+                return NotFound(ResultadoDTO<string>.Fallido($"No se pudo anular el Plan de pago con ID {id}"));
+
+            var resultadoDTO = ResultadoDTO<string>.Exitoso(null, "Plan de pago anulado correctamente");
             return Ok(resultadoDTO);
         }
+
+        //[HttpDelete("{id}")]
+        //[ProducesResponseType(typeof(ResultadoDTO<string>), StatusCodes.Status200OK)]
+        //public async Task<ActionResult<ResultadoDTO<string>>> Delete(int id)
+        //{
+        //    _logger.LogInformation($"Eliminando Plan de pago con ID {id}");
+
+        //    var deleted = await _baseService.DeleteAsync(id);
+
+        //    if (!deleted)
+        //        return NotFound(ResultadoDTO<string>.Fallido($"No se encontró el Plan de pago con ID {id} para eliminar"));
+
+        //    var resultadoDTO = ResultadoDTO<string>.Exitoso(null, "Plan de pago eliminado correctamente");
+
+        //    return Ok(resultadoDTO);
+        //}
 
     }
 
