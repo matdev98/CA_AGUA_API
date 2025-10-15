@@ -14,6 +14,10 @@ namespace caMUNICIPIOSAPI.Application.Profiles
     {
         public AutoMapperProfile()
         {
+            //NOTICIAS
+            CreateMap<NoticiaDTO, Noticias>()
+                .ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember != null));
+
             // USERS - DTOs
             CreateMap<Usuarios, UserDTO>();
             CreateMap<UserCreateDTO, Usuarios>();

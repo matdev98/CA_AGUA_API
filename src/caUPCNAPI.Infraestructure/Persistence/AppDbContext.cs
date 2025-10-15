@@ -30,6 +30,7 @@ namespace caMUNICIPIOSAPI.Infraestructure.Persistence
         public DbSet<Localidad> Localidades { get; set; }
         public DbSet<MedioPago> MediosPago { get; set; }
         public DbSet<Municipio> Municipios { get; set; }
+        public DbSet<Noticias> Noticias { get; set; }
         public DbSet<Notificacion> Notificaciones { get; set; }
         public DbSet<ObraPublica> ObrasPublicas { get; set; }
         public DbSet<Pago> Pagos { get; set; }
@@ -187,6 +188,12 @@ namespace caMUNICIPIOSAPI.Infraestructure.Persistence
             modelBuilder.Entity<Municipio>(entity =>
             {
                 entity.ToTable("Municipios");
+                entity.HasKey(e => e.Id);
+            });
+
+            modelBuilder.Entity<Noticias>(entity =>
+            {
+                entity.ToTable("Noticias");
                 entity.HasKey(e => e.Id);
             });
 
