@@ -19,6 +19,11 @@ namespace caMUNICIPIOSAPI.Infraestructure.Persistence.Repositories
             _context = context;
         }
 
+        public async Task<Contribuyente?> GetContribuyenteByDNI(string documento)
+        {
+            return await _context.Contribuyentes.FirstOrDefaultAsync(c => c.NumeroDocumento == documento);
+        }
+
         public async Task<IEnumerable<Contribuyente>> GetByMunicipioIdAsync(int idMunicipio)
         {
             return await _context.Contribuyentes

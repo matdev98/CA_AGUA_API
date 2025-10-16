@@ -13,8 +13,10 @@ using caMUNICIPIOSAPI.API.Extensions;
 using Microsoft.OpenApi.Models;
 using caMUNICIPIOSAPI.Infraestructure;
 using caMUNICIPIOSAPI.Domain;
+using DotNetEnv;
 
 
+DotNetEnv.Env.Load(Path.Combine(AppContext.BaseDirectory, ".env"));
 
 var builder = WebApplication.CreateBuilder(args);
 

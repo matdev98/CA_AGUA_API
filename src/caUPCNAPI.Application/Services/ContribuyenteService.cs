@@ -21,6 +21,11 @@ namespace caMUNICIPIOSAPI.Application.Services
             _repository = repository;
         }
 
+        public async Task<Contribuyente?> GetContribuyenteByDNI (string documento)
+        {
+            return await _repository.GetContribuyenteByDNI(documento);
+        }
+
         public async Task<IEnumerable<Contribuyente>> GetByMunicipioIdAsync(int idMunicipio)
         {
             return await _repository.GetByMunicipioIdAsync(idMunicipio);

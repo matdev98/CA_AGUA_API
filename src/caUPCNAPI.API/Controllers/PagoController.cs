@@ -3,13 +3,16 @@ using caMUNICIPIOSAPI.Application.DTOs;
 using caMUNICIPIOSAPI.Application.Interfaces.Services;
 using caMUNICIPIOSAPI.Application.Services;
 using caMUNICIPIOSAPI.Domain.Entities;
+using caMUNICIPIOSAPI.Infraestructure.Persistence;
+using MercadoPago.Client.Payment;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace caMUNICIPIOSAPI.API.Controllers
 {
-    [Authorize]
+  
     [ApiController]
     [Route("api/v1/[controller]")]
     public class PagoController : ControllerBase
@@ -17,17 +20,26 @@ namespace caMUNICIPIOSAPI.API.Controllers
         private readonly ILogger<PagoController> _logger;
         private readonly IMapper _mapper;
 
+        //Esto no deberia estar aqui
+        private readonly AppDbContext _context;
+
         private readonly IBaseService<Pago> _baseService;
         private readonly IPagoService _pagoService;
+        private readonly ITributoService _tributoService;
+        private readonly IContribuyenteService _contribuyenteService;
 
-        public PagoController(IBaseService<Pago> baseService, IPagoService pagoService, ILogger<PagoController> logger, IMapper mapper)
+        public PagoController(AppDbContext dbContext, IBaseService<Pago> baseService, IPagoService pagoService, ITributoService tributoService, IContribuyenteService contribuyenteService, ILogger<PagoController> logger, IMapper mapper)
         {
+            _context = dbContext;
             _baseService = baseService;
             _pagoService = pagoService;
+            _tributoService = tributoService;
+            _contribuyenteService = contribuyenteService;
             _logger = logger;
             _mapper = mapper;
         }
 
+        [Authorize]
         [HttpGet]
         [ProducesResponseType(typeof(ResultadoDTO<IEnumerable<Pago>>), StatusCodes.Status200OK)]
         public async Task<ActionResult<ResultadoDTO<IEnumerable<Pago>>>> GetAllMunicipios()
@@ -42,6 +54,7 @@ namespace caMUNICIPIOSAPI.API.Controllers
             return Ok(resultadoDTO);
         }
 
+        [Authorize]
         [HttpGet("{id}")]
         [ProducesResponseType(typeof(ResultadoDTO<Pago>), StatusCodes.Status200OK)]
         public async Task<ActionResult<ResultadoDTO<Pago>>> GetById(int id)
@@ -59,6 +72,7 @@ namespace caMUNICIPIOSAPI.API.Controllers
             return Ok(resultadoDTO);
         }
 
+        [Authorize]
         [HttpGet("por-inmueble/{idContribuyente}/{idInmueble}/{periodo}")]
         [ProducesResponseType(typeof(ResultadoDTO<List<Pago>>), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -84,6 +98,7 @@ namespace caMUNICIPIOSAPI.API.Controllers
             });
         }
 
+        [Authorize]
         [HttpPost]
         [ProducesResponseType(typeof(ResultadoDTO<Pago>), StatusCodes.Status201Created)]
         public async Task<ActionResult<ResultadoDTO<Pago>>> Create([FromBody] PagoDTO dto)
@@ -112,6 +127,7 @@ namespace caMUNICIPIOSAPI.API.Controllers
             return CreatedAtAction(nameof(GetById), new { id = createdEntity.IdPago }, resultadoDTO);
         }
 
+        [Authorize]
         [HttpPut("{id}")]
         [ProducesResponseType(typeof(ResultadoDTO<string>), StatusCodes.Status200OK)]
         public async Task<ActionResult<ResultadoDTO<string>>> Update(int id, [FromBody] PagoDTO dto)
@@ -146,6 +162,7 @@ namespace caMUNICIPIOSAPI.API.Controllers
             return Ok(resultadoDTO);
         }
 
+        [Authorize]
         [HttpPut("anular/{id}")] // Ruta descriptiva
         [ProducesResponseType(typeof(ResultadoDTO<bool>), StatusCodes.Status200OK)]
         public async Task<ActionResult<ResultadoDTO<bool>>> UpdateInmuebleEstadoToInactive(int id)
@@ -200,6 +217,7 @@ namespace caMUNICIPIOSAPI.API.Controllers
         //    return Ok(resultadoDTO);
         //}
 
+        [Authorize]
         [HttpGet("detalle-por-fechas")]
         [ProducesResponseType(typeof(ResultadoDTO<List<PagoDetalleDTO>>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ResultadoDTO<string>), StatusCodes.Status400BadRequest)]
@@ -239,6 +257,126 @@ namespace caMUNICIPIOSAPI.API.Controllers
                 _logger.LogError(ex, "Error al obtener detalle de pagos por fechas y municipio.");
                 return StatusCode(StatusCodes.Status500InternalServerError,
                     ResultadoDTO<string>.Fallido($"Error interno del servidor: {ex.Message}"));
+            }
+        }
+
+
+
+        [Authorize]
+        [HttpPost("crear-preferencia-mp")]
+        [ProducesResponseType(typeof(ResultadoDTO<string>), StatusCodes.Status201Created)]
+        public async Task<ActionResult<ResultadoDTO<string>>> CrearPreferenciaMP(string documento, string anioMes, string nombreProducto)
+        {
+            _logger.LogInformation("Creando preferencia de mercado pago");
+            var preferencia = await _pagoService.CrearPreferenciaAsync(documento, anioMes, nombreProducto);
+
+            if (preferencia == null)
+            {
+                return NotFound(ResultadoDTO<string>.Fallido("No se pudo crear la preferencia."));
+            }
+
+            var resultadoDTO = ResultadoDTO<string>.Exitoso(preferencia.InitPoint);
+
+            return Ok(resultadoDTO);
+        }
+
+
+        [HttpPost("webhookmp")]
+        [ApiExplorerSettings(IgnoreApi = true)]
+        public async Task<IActionResult> Webhook2(
+            [FromBody] MpWebhookDto? payload,
+            [FromQuery] string? id,
+            [FromQuery] string? topic,
+            [FromQuery] string? type)
+        {
+            var eventType = payload?.Type ?? type ?? topic;
+            var resourceId = payload != null ? payload.Data.Id.ToString() : id;
+
+            if (string.IsNullOrWhiteSpace(resourceId))
+                return Ok(); // MP reintenta si no respondés
+
+            try
+            {
+                if (!string.Equals(eventType, "payment", StringComparison.OrdinalIgnoreCase))
+                    return Ok(); // Ignoramos otros eventos
+
+                var paymentClient = new PaymentClient();
+                var payment = await paymentClient.GetAsync(long.Parse(resourceId));
+
+                if (!string.Equals(payment.Status, "approved", StringComparison.OrdinalIgnoreCase))
+                    return Ok(); // Solo procesamos pagos aprobados
+
+                var paymentIdStr = payment.Id.ToString();
+
+                var yaExiste = await _context.ComprobantesMercadoPago
+                    .AnyAsync(c => c.ComprobanteMp == paymentIdStr);
+
+                if (yaExiste)
+                    return Ok(); // Ya registrado
+
+                // Leer external_reference y extraer documento y anioMes
+                var externalRef = payment.ExternalReference ?? "";
+                var partes = externalRef.Split('|');
+                var documento = partes.ElementAtOrDefault(0);
+                var anioMes = partes.ElementAtOrDefault(1);
+
+
+                if (string.IsNullOrWhiteSpace(documento) || string.IsNullOrWhiteSpace(anioMes))
+                    return BadRequest("No se pudo obtener documento o anioMes desde external_reference.");
+
+                var contribuyente = await _contribuyenteService.GetContribuyenteByDNI(documento);
+
+                var deudas = await _tributoService.ObtenerTributosAgrupadosAsync(contribuyente.Id, anioMes);
+                if (deudas == null || deudas.Count == 0)
+                    return NotFound("No hay deudas para procesar.");
+
+                await using var tx = await _context.Database.BeginTransactionAsync();
+
+                foreach (var deuda in deudas)
+                {
+                    var pago = new Pago
+                    {
+                        IdContribuyente = contribuyente.Id,
+                        FechaPago = DateTime.Now,
+                        MontoPagado = deuda.Monto,
+                        IdMedioPago = 7, // MercadoPago
+                        Idinmueble = deuda.IdInmueble,
+                        Periodo = deuda.Periodo,
+                        EstadoId = 1,
+                        IdMunicipio = deuda.IdMunicipio,
+                        IdTributo = 0
+                    };
+
+                    _context.Pagos.Add(pago);
+                    await _context.SaveChangesAsync(); // para obtener IdPago
+
+                    var comprobante = new ComprobantesMercadoPago
+                    {
+                        IdPago = (int)pago.IdPago,
+                        ComprobanteMp = paymentIdStr,
+                        ImportePago = deuda.Monto,
+                        FechaCrea = DateTime.Now
+                    };
+
+                    _context.ComprobantesMercadoPago.Add(comprobante);
+                }
+
+                await _context.SaveChangesAsync();
+                await tx.CommitAsync();
+
+                var token = await _pagoService.ObtenerTokenChattigoAsync();
+                var telefono = contribuyente.Celular ?? ""; // Asegurate que esté en formato 549xxxxxxxxxx
+                var nombre = $"{contribuyente.Nombres}";
+                var mensaje = $"✅ ¡Excelente, {nombre}! Tu pago fue *registrado con éxito* 🎉. Gracias por confiar en el chatbot de la Municipalidad de Tintina 🏛️. ¡Estamos para ayudarte siempre! 🙌";
+
+                await _pagoService.EnviarMensajeChattigoAsync(token, telefono, nombre, mensaje);
+
+                return Ok("Webhook procesado correctamente.");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error procesando webhook de MercadoPago");
+                return StatusCode(500, $"Error procesando webhook.{ex.Message}");
             }
         }
 

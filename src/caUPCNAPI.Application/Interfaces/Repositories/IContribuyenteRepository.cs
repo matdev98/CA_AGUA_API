@@ -10,6 +10,7 @@ namespace caMUNICIPIOSAPI.Application.Interfaces.Repositories
 {
     public interface IContribuyenteRepository : IBaseRepository<Contribuyente>
     {
+        Task<Contribuyente?> GetContribuyenteByDNI(string documento);
         Task<IEnumerable<Contribuyente>> GetByMunicipioIdAsync(int idMunicipio);
         Task<bool> UpdateEstadoIdAsync(int id, int idUsuario);
         Task<IEnumerable<Contribuyente>> GetLast10AddedContribuyentesAsync(int idMunicipio);

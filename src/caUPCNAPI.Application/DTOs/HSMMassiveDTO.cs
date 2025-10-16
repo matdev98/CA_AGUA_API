@@ -43,4 +43,16 @@ namespace caMUNICIPIOSAPI.Application.DTOs
         public List<string> parameters { get; set; }
     }
 
+    public class ChattigoMessageRequest
+    {
+        public string Id { get; set; }
+        public string Did { get; set; }
+        public string Msisdn { get; set; }
+        public string Type { get; set; } = "text";
+        public string Channel { get; set; } = "WHATSAPP";
+        public string Content { get; set; }
+        public string Name { get; set; }
+        public bool IsAttachment { get; set; } = false;
+    }
+
 }

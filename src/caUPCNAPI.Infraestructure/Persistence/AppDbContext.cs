@@ -16,6 +16,7 @@ namespace caMUNICIPIOSAPI.Infraestructure.Persistence
         public DbSet<Auditoria> Auditorias { get; set; }
         public DbSet<CierreCaja> CierreCaja { get; set; }
         public DbSet<ColaNotificaciones> ColaNotificaciones { get; set; }
+        public DbSet<ComprobantesMercadoPago> ComprobantesMercadoPago { get; set; }
         public DbSet<Contribuyente> Contribuyentes { get; set; }
         public DbSet<ContribuyentesImpuestosVariables> ContribuyentesImpuestosVariables { get; set; }
         public DbSet<CuotasPlan> CuotasPlan { get; set; }
@@ -70,6 +71,12 @@ namespace caMUNICIPIOSAPI.Infraestructure.Persistence
             modelBuilder.Entity<CierreCaja>(entity =>
             {
                 entity.ToTable("CierreCaja");
+                entity.HasKey(e => e.Id);
+            });
+
+            modelBuilder.Entity<ComprobantesMercadoPago>(entity =>
+            {
+                entity.ToTable("ComprobantesMercadoPago");
                 entity.HasKey(e => e.Id);
             });
 
