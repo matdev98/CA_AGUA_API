@@ -178,6 +178,7 @@ namespace caMUNICIPIOSAPI.Application.Services
 
             var response = await http.PostAsJsonAsync("https://massive.chattigo.com/message/inbound/message", payload);
             response.EnsureSuccessStatusCode();
+        }
         public async Task<bool> AnularCierreCajaAsync(int idCierrre, int idUsuario)
         {
             try
