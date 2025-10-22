@@ -1,0 +1,25 @@
+﻿using caAGUAAPI.Application.DTOs;
+using caAGUAAPI.Domain.Entities;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace caAGUAAPI.Application.Interfaces.Repositories
+{
+    public interface IUserRepository
+    {
+        Task<Usuarios?> GetByIdAsync(int id);
+        Task<IEnumerable<Usuarios>> GetAllAsync();
+        Task AddAsync(Usuarios user);
+        Task UpdateAsync(Usuarios user);
+        Task DeleteAsync(int id);
+        Task<Rol> GetRolByIdUsuario(int id);
+        Task<string> GetNombreRol(int idUsuario);
+        Task<List<UserDTO>> GetUsersByMunicipioAsync(int idMunicipio);
+        Task<bool> CheckUsername(string username, string email);
+        Task<bool> CheckUsername(string username, string email, int id);
+        Task<UsuarioRolDTO> GetUsuarioRol(int id);
+    }
+}

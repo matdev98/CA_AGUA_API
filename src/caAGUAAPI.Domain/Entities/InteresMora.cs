@@ -1,0 +1,17 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace caAGUAAPI.Domain.Entities
+{
+    public class InteresMora
+    {
+        public int Id { get; set; }
+        public int TributoId { get; set; }
+        public int DiasMora { get; set; }
+        public decimal MontoInteres { get; set; }
+        public DateTime CalculadoEn { get; set; }
+    }
+}
